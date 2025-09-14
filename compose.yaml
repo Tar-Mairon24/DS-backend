@@ -1,41 +1,43 @@
 services:
   mysql:
     image: mysql:8.0
-    container_name: inmosoft-app-db
+    container_name: ds_database
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${USER_PASSWORD}
-      MYSQL_HOST: ${DB_HOST}
+    healthcheck:
+          test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+          interval: 10s
+          timeout: 5s
+          retries: 5
     ports:
-      - "3306:3306"
+      - "${DB_PORT}:3306"
     volumes:
-      - ./shared/mysql:/docker-entrypoint-initdb.d
+      - ./mysql:/docker-entrypoint-initdb.d
     networks:
       - my_network
-  
-  # gin-backend:
-  #   build:
-  #     context: ./backend
-  #     dockerfile: Dockerfile
-  #   container_name: gin_backend
-  #   restart: always
-  #   environment:
-  #     DB_HOST: mysql_db
-  #     DB_NAME: ${DB_NAME}
-  #     DB_USER: ${DB_USER}
-  #     DB_PASSWORD: ${DB_PASSWORD}
-  #     DB_PORT: 3306
-  #   volumes:
-  #     - ./backend:/app
-  #   ports:
-  #     - "8080:8080"
-  #   networks:
-  #     - my_network
-  #   depends_on:
-  #     - mysql
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ds_backend
+    restart: always
+    environment:
+      DB_HOST: ds_database
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_PORT: ${DB_PORT}
+    ports:
+      - "${API_PORT}:8080"
+    networks:
+      - my_network
+    depends_on:
+      - mysql
 
 networks:
   my_network:

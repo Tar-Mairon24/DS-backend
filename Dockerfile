@@ -1,31 +1,32 @@
-# Use the official Golang image to create a build environment
-FROM golang:1.23-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
-# Set the Current Working Directory inside the container
+RUN apk --no-cache add ca-certificates tzdata
+
 WORKDIR /app
 
-# Copy the source code to the Working Directory inside the container
-COPY . /app/
+COPY go.mod go.sum ./
 
-# Download all dependencies. Dependencies will be cached if the go.mod and go.sum files are not changed
 RUN go mod download
 
-# Build the Go app
-RUN go build -o main main.go
+COPY . .
 
-# Start a new stage from scratch
+RUN go build -o main cmd/main.go 
+
+
 FROM alpine:latest
 
-# Set the Current Working Directory inside the container
+RUN apk --no-cache add ca-certificates tzdata
+
 WORKDIR /app
 
-# Copy the Pre-built binary file from the previous stage
+RUN adduser -D -s /bin/sh appuser
+
 COPY --from=builder /app/main .
 
-RUN apk add --no-cache ca-certificates && chmod +x main && ls -l /app && sleep 10
+RUN chown appuser:appuser main
 
-# Expose port 8080 to the outside world
+USER appuser
+
 EXPOSE 8080
 
-# Command to run the executable
-CMD [ "sh", "-c", "./main" ]
+CMD ["./main"]

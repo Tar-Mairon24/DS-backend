@@ -1,0 +1,10 @@
+# Este archivo se renombra a solo .env, y en el se van a almacenar los datos para 
+# la conexión a la base de datos, y la contraseña del usuario a utilizar
+
+DB_USER= #Se pone el usuario a utilizar 
+DB_PASSWORD= #Se pone la contraseña del usuario root
+DB_NAME= #Se pone el nombre de la base de datos
+USER_PASSWORD= #Se pone la contraseña del usuario a utilizar
+DB_PORT= #Se pone el puerto de la base de datos normalmente 3306
+
+API_PORT= #Se pone el puerto de la API normalmente 3000, por que si xd
