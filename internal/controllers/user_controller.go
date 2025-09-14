@@ -1,12 +1,13 @@
 package controllers
 
 import (
-	"backend/internal/services"
 	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+
+	"backend/internal/services"
 )
 
 type UserController struct {
@@ -65,3 +66,7 @@ func (ctrl *UserController) Login(c *gin.Context) {
 
 	c.JSON(http.StatusOK, user)
 }
+
+// POST /create
+func (ctrl *UserController) CreateUser(c *gin.Context)
+
