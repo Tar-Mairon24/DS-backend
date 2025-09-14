@@ -64,7 +64,7 @@ Renombra el archivo de ejemplo y configura las variables de entorno:
 **Windows:**
 ```powershell
 copy env-example .env
-notepad .env
+notepad .env  # o tu editor
 ```
 
 **Linux/macOS:**
@@ -99,6 +99,9 @@ JWT_SECRET=tu_jwt_secret_muy_seguro
 **Primera vez o después de cambios:**
 
 **Windows (PowerShell/CMD):**
+
+Puedes utilizar docker desktop con compose
+
 ```powershell
 docker-compose up -d --build
 ```
@@ -146,7 +149,7 @@ docker ps
 
 ## 🌐 API Endpoints
 
-Una vez que el servidor esté corriendo, la API estará disponible en: `http://localhost:8080`
+Una vez que el servidor esté corriendo, la API estará disponible en: `http://localhost:3000`
 
 ### Ejemplos de endpoints:
 
@@ -162,7 +165,7 @@ Una vez que el servidor esté corriendo, la API estará disponible en: `http://l
 ### Usando Postman
 1. Descarga [Postman Desktop](https://www.postman.com/downloads/)
 2. Importa la colección de endpoints (si está disponible)
-3. Configura el environment con `base_url: http://localhost:8080`
+3. Configura el environment con `base_url: http://localhost:3000`
 
 ### Usando curl
 
@@ -199,42 +202,10 @@ docker logs ds_database
 
 # Ver logs en tiempo real
 docker logs -f ds_backend
-```
-
-## 📁 Estructura del Proyecto
-
-```
-DS-backend/
-├── config/           # Configuración de la aplicación
-├── controllers/      # Controladores de la API
-├── models/          # Modelos de datos
-├── middleware/      # Middleware de autenticación y seguridad
-├── routes/          # Definición de rutas
-├── utils/           # Utilidades y helpers
-├── mysql/           # Scripts de inicialización de BD
-├── Dockerfile       # Configuración de Docker
-├── compose.yaml     # Docker Compose
-├── go.mod          # Dependencias de Go
-├── main.go         # Punto de entrada
-├── .env            # Variables de entorno (no commitear)
-└── README.md       # Este archivo
-```
-
-## 🤝 Contribución
-
-1. Fork el proyecto
-2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
 
 ## 📝 Notas de Seguridad
 
 - ⚠️ Nunca commitees el archivo `.env` al repositorio
 - 🔐 Usa contraseñas seguras para la base de datos
 - 🛡️ El JWT secret debe ser único y complejo
-- 🔒 Siempre usa HTTPS en producción
 
----
-
-**Desarrollado con ❤️ para la clase de Desarrollo Seguro**
