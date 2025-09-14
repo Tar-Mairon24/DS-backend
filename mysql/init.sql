@@ -47,7 +47,7 @@ ENGINE = InnoDB;
 CREATE TABLE IF NOT EXISTS `inmosoftDB`.`Usuarios` (
   `usuario` VARCHAR(100)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NOT NULL,
   `nombre_usuario` VARCHAR(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
-  `password_usuario` VARCHAR(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
+  `password_usuario` VARCHAR(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
   `rol` ENUM('admin', 'agente', 'cliente') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
   `creado_en` DATETIME NULL,
   `actualizado_en` DATETIME NULL,

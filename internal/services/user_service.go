@@ -38,19 +38,28 @@ func (service *UserService) GetUserByID(id int) (*models.User, error) {
 }
 
 // Function to retrieve a user by email and password
-func (service *UserService) Login(email, password string) (*models.User, error) {
+func (service *UserService) Login(email, password string) (*models.UserResponse, error) {
 	user := &models.User{}
-	query := "select * from Usuarios where usuario = ? and password_usuario = ?;"
-	err := service.DB.QueryRow(query, email, password).Scan(&user.Email, &user.Password)
-	log.Println("User:", user.Email+" "+user.Password)
-	log.Println("Error:", err)
+	query := "select usuario, nombre_usuario, password_usuario, rol from Usuarios where usuario = ?;"
+	err := service.DB.QueryRow(query, email).Scan(&user.Email, &user.Nombre, &user.Password, &user.Rol)
+
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return user, errors.New("invalid credentials")
-		}
-		return user, err
+		log.Println("Error fetching user:", err)
+		return nil, err
 	}
-	return user, nil
+
+	if user.Password == "" {
+		log.Println("User not found")
+		return nil, errors.New("invalid credentials")
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+	if err != nil {
+		log.Println("Password mismatch:", err)
+		return nil, errors.New("invalid credentials")
+	}
+
+	return user.ToResponse(), nil
 }
 
 func (service *UserService) CreateUser(user *models.User) (*models.UserResponse, error) {
@@ -74,7 +83,7 @@ func (service *UserService) CreateUser(user *models.User) (*models.UserResponse,
 		return nil, err
 	}
 
-	query := "INSERT INTO Usuarios (usuario, nombre_usuario, password_usuario, rol_usuario, creado_en, actualizado_en) VALUES (?, ?, ?, ?, ?, ?)"
+	query := "INSERT INTO Usuarios (usuario, nombre_usuario, password_usuario, rol, creado_en, actualizado_en) VALUES (?, ?, ?, ?, ?, ?)"
 	_, err = service.DB.Exec(query, user.Email, user.Nombre, hashedPassword, user.Rol, time.Now(), time.Now())
 	if err != nil {
 		log.Println("Error creating user:", err)

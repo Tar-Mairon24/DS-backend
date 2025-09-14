@@ -79,6 +79,7 @@ func userRoutes(group *gin.RouterGroup, userController *controllers.UserControll
 	users := group.Group("/users")
 	{
 		users.GET(":id", userController.GetUser)
+		users.POST("/create", userController.CreateUser)
 	}
 }
 

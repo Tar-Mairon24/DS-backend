@@ -1,7 +1,3 @@
-insert into Usuarios values ('Prueba', 'prueba');
-insert into Usuarios values ('Admin', 'admin');
-insert into Usuarios values ('Socia', 'Socia');
-
 INSERT INTO `inmosoftDB`.`Tipo_Propiedad` values (1, 'casa');
 INSERT INTO `inmosoftDB`.`Tipo_Propiedad` values (2, 'bodega');
 INSERT INTO `inmosoftDB`.`Tipo_Propiedad` values (3, 'local');
