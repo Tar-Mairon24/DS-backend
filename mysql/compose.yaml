@@ -1,0 +1,42 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${USER_PASSWORD}
+      MYSQL_HOST: ${DB_HOST}
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./shared/mysql:/docker-entrypoint-initdb.d
+    networks:
+      - my_network
+  
+  # gin-backend:
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile
+  #   container_name: gin_backend
+  #   restart: always
+  #   environment:
+  #     DB_HOST: mysql_db
+  #     DB_NAME: ${DB_NAME}
+  #     DB_USER: ${DB_USER}
+  #     DB_PASSWORD: ${DB_PASSWORD}
+  #     DB_PORT: 3306
+  #   volumes:
+  #     - ./backend:/app
+  #   ports:
+  #     - "8080:8080"
+  #   networks:
+  #     - my_network
+  #   depends_on:
+  #     - mysql
+
+networks:
+  my_network:
+    driver: bridge
