@@ -8,3 +8,5 @@ USER_PASSWORD= #Se pone la contraseña del usuario a utilizar
 DB_PORT= #Se pone el puerto de la base de datos normalmente 3306
 
 API_PORT= #Se pone el puerto de la API normalmente 3000, por que si xd
+
+JWT_SECRET= #Se pone una cadena larga y segura para firmar los tokens JWT

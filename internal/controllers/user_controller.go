@@ -60,7 +60,14 @@ func (ctrl *UserController) Login(c *gin.Context) {
 
 	user, err := ctrl.UserService.Login(loginData.Email, loginData.Password)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		log.Println("Login error:", err)
+		if err.Error() == "no such user found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		} else if err.Error() == "invalid credentials" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to login"})
+		}
 		return
 	}
 

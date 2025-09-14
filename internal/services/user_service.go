@@ -38,19 +38,19 @@ func (service *UserService) GetUserByID(id int) (*models.User, error) {
 }
 
 // Function to retrieve a user by email and password
-func (service *UserService) Login(email, password string) (*models.UserResponse, error) {
+func (service *UserService) Login(email, password string) (*models.UserLoginResponse, error) {
 	user := &models.User{}
 	query := "select usuario, nombre_usuario, password_usuario, rol from Usuarios where usuario = ?;"
 	err := service.DB.QueryRow(query, email).Scan(&user.Email, &user.Nombre, &user.Password, &user.Rol)
 
 	if err != nil {
 		log.Println("Error fetching user:", err)
-		return nil, err
+		return nil, errors.New("no such user found")
 	}
 
 	if user.Password == "" {
 		log.Println("User not found")
-		return nil, errors.New("invalid credentials")
+		return nil, errors.New("no such user found")
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
@@ -59,7 +59,16 @@ func (service *UserService) Login(email, password string) (*models.UserResponse,
 		return nil, errors.New("invalid credentials")
 	}
 
-	return user.ToResponse(), nil
+	token, err := GenerateToken(user)
+	if err != nil {
+		log.Println("Error generating token:", err)
+		return nil, errors.New("failed to generate token")
+	}
+
+	return &models.UserLoginResponse{
+		Token: token,
+		User:  user.ToResponse(),
+	}, nil
 }
 
 func (service *UserService) CreateUser(user *models.User) (*models.UserResponse, error) {
