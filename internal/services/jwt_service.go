@@ -50,7 +50,7 @@ func GenerateToken(user *models.User) (string, error) {
 	return tokenString, nil
 }
 
-func JwtAuthorization(token string) (gin.HandlerFunc, error) {
+func JwtAuthorization() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
@@ -91,7 +91,7 @@ func JwtAuthorization(token string) (gin.HandlerFunc, error) {
 		c.Set("rol", claims.Rol)
 		c.Set("claims", claims)
 		c.Next()
-	}, nil
+	}
 }
 
 func validateJWTToken(tokenString string) (*models.JWTClaims, error) {

@@ -76,15 +76,17 @@ func authRoutes(group *gin.RouterGroup, userController *controllers.UserControll
 }
 
 func userRoutes(group *gin.RouterGroup, userController *controllers.UserController) {
+	group.POST("/users/create", userController.CreateUser)
 	users := group.Group("/users")
+	users.Use(services.JwtAuthorization())
 	{
 		users.GET(":id", userController.GetUser)
-		users.POST("/create", userController.CreateUser)
 	}
 }
 
 func propiedadRoutes(group *gin.RouterGroup, propiedadController *controllers.Propiedad_Controller) {
 	propiedades := group.Group("/propiedades")
+	propiedades.Use(services.JwtAuthorization())
 	{
 		propiedades.GET("/all", propiedadController.GetAllPropiedades)
 		propiedades.GET("/all/propiedadesByPrice", propiedadController.GetAllPropiedadesByPrice)
@@ -98,6 +100,7 @@ func propiedadRoutes(group *gin.RouterGroup, propiedadController *controllers.Pr
 
 func propietarioRoutes(group *gin.RouterGroup, propietarioController *controllers.PropietarioController) {
 	propietarios := group.Group("/propietarios")
+	propietarios.Use(services.JwtAuthorization())
 	{
 		propietarios.GET("/:id", propietarioController.GetPropietario)
 		propietarios.POST("/create", propietarioController.CreatePropietario)
@@ -106,6 +109,7 @@ func propietarioRoutes(group *gin.RouterGroup, propietarioController *controller
 
 func prospectoRoutes(group *gin.RouterGroup, prospectoController *controllers.ProspectoController) {
 	prospectos := group.Group("/prospectos")
+	prospectos.Use(services.JwtAuthorization())
 	{
 		prospectos.GET("/:id", prospectoController.GetProspecto)
 		prospectos.POST("/create", prospectoController.InsertProspecto)
@@ -115,6 +119,7 @@ func prospectoRoutes(group *gin.RouterGroup, prospectoController *controllers.Pr
 
 func tipoPropiedadRoutes(group *gin.RouterGroup, tipoPropiedadController *controllers.TipoPropiedadController) {
 	tipos := group.Group("/tipopropiedad")
+	tipos.Use(services.JwtAuthorization())
 	{
 		tipos.GET("/:id", tipoPropiedadController.GetTipoPropiedad)
 		tipos.POST("/create", tipoPropiedadController.CreateTipoPropiedad)
@@ -123,6 +128,7 @@ func tipoPropiedadRoutes(group *gin.RouterGroup, tipoPropiedadController *contro
 
 func estadoPropiedadRoutes(group *gin.RouterGroup, estadoPropiedadController *controllers.EstadoPropiedadController) {
 	estados := group.Group("/estadopropiedad")
+	estados.Use(services.JwtAuthorization())
 	{
 		estados.GET("/:id", estadoPropiedadController.GetEstadoPropiedad)
 		estados.POST("/create", estadoPropiedadController.CreateEstadoPropiedad)
@@ -131,6 +137,7 @@ func estadoPropiedadRoutes(group *gin.RouterGroup, estadoPropiedadController *co
 }
 func imagenesProspectoRoutes(group *gin.RouterGroup, imagenesProspectoController *controllers.ImagenesProspectoController) {
 	imagenes := group.Group("/imagenesProspecto")
+	imagenes.Use(services.JwtAuthorization())
 	{
 		imagenes.GET("/principal/:id", imagenesProspectoController.GetImagenPrincipal)
 		imagenes.GET("/prospecto/:id", imagenesProspectoController.GetImagenesByProspecto)
@@ -139,6 +146,7 @@ func imagenesProspectoRoutes(group *gin.RouterGroup, imagenesProspectoController
 }
 func citasRoutes(group *gin.RouterGroup, citasController *controllers.CitasController) {
 	citas := group.Group("/citas")
+	citas.Use(services.JwtAuthorization())
 	{
 		citas.GET("/all/:id", citasController.GetAllCitas)
 		citas.GET("/:id", citasController.GetCita)
@@ -150,6 +158,7 @@ func citasRoutes(group *gin.RouterGroup, citasController *controllers.CitasContr
 }
 func contratosRoutes(group *gin.RouterGroup, contratosController *controllers.ContratosController) {
 	contratos := group.Group("/contratos")
+	contratos.Use(services.JwtAuthorization())
 	{
 		contratos.GET("/:id", contratosController.GetContrato)
 		contratos.GET("/all", contratosController.GetContratos)
@@ -161,6 +170,7 @@ func contratosRoutes(group *gin.RouterGroup, contratosController *controllers.Co
 }
 func imagenesRoutes(group *gin.RouterGroup, imagenesController *controllers.ImagenesController) {
 	imagenes := group.Group("/imagenes")
+	imagenes.Use(services.JwtAuthorization())
 	{
 		imagenes.GET("/all/propiedad/:id", imagenesController.GetImagenesByPropiedad)
 		imagenes.GET("/all/principal/:id", imagenesController.GetImagenPrincipal)
@@ -171,6 +181,7 @@ func imagenesRoutes(group *gin.RouterGroup, imagenesController *controllers.Imag
 
 func documentosAnexosRoutes(group *gin.RouterGroup, documentosAnexosController *controllers.DocumentosAnexosController){
 	documentos := group.Group("/documentos_anexos")
+	documentos.Use(services.JwtAuthorization())
 	{
 		documentos.GET("/all/propiedad/:id", documentosAnexosController.GetDocumentosByPropiedad)
 		documentos.GET("/:id", documentosAnexosController.GetDocumentoAnexo)

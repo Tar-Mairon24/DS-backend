@@ -23,10 +23,10 @@ func NewUserService(db *sql.DB) *UserService {
 }
 
 // Function to retrieve a user by ID
-func (service *UserService) GetUserByID(id int) (*models.User, error) {
+func (service *UserService) GetUserByID(id int) (*models.UserResponse, error) {
 	user := &models.User{}
-	query := "SELECT * FROM Usuarios WHERE id_usuario = ?"
-	err := service.DB.QueryRow(query, id).Scan(&user.Email, &user.Password)
+	query := "SELECT id_usuario, usuario, nombre_usuario, rol FROM Usuarios WHERE id_usuario = ?"
+	err := service.DB.QueryRow(query, id).Scan(&user.ID, &user.Email, &user.Nombre, &user.Rol)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -34,14 +34,14 @@ func (service *UserService) GetUserByID(id int) (*models.User, error) {
 		log.Println("Error fetching user by ID:", err)
 		return nil, err
 	}
-	return user, nil
+	return user.ToResponse(), nil
 }
 
 // Function to retrieve a user by email and password
 func (service *UserService) Login(email, password string) (*models.UserLoginResponse, error) {
 	user := &models.User{}
-	query := "select usuario, nombre_usuario, password_usuario, rol from Usuarios where usuario = ?;"
-	err := service.DB.QueryRow(query, email).Scan(&user.Email, &user.Nombre, &user.Password, &user.Rol)
+	query := "select id_usuario, usuario, nombre_usuario, rol from Usuarios where usuario = ?;"
+	err := service.DB.QueryRow(query, email).Scan(&user.ID, &user.Email, &user.Nombre, &user.Rol)
 
 	if err != nil {
 		log.Println("Error fetching user:", err)
