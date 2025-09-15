@@ -16,7 +16,6 @@ type UserResponse struct {
 	ID     int    `json:"id"`
 	Email  string `json:"email"`
 	Nombre string `json:"nombre"`
-	Rol    string `json:"rol"`
 }
 
 type UserLoginData struct {
@@ -36,6 +35,5 @@ func (u *User) ToResponse() *UserResponse {
 		ID:     u.ID,
 		Email:  u.Email,
 		Nombre: u.Nombre,
-		Rol:    u.Rol,
 	}
 }

@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -57,30 +56,12 @@ func JwtAuthorization() gin.HandlerFunc {
 			log.Println("Token found in cookie")
 			token = cookieToken
 		} else {
-			authHeader := c.GetHeader("Authorization")
-			if authHeader == "" {
-				log.Println("Authorization header missing")
-				c.JSON(http.StatusUnauthorized, gin.H{
-					"error":   "Authorization header missing",
-					"message": "Please provide a valid token",
-				})
-				c.Abort()
-				return
-			}
-
-			tokenparts := strings.Split(authHeader, " ")
-			if len(tokenparts) != 2 || tokenparts[0] != "Bearer" {
-				log.Println("Invalid Authorization header format")
-				c.JSON(http.StatusUnauthorized, gin.H{
-					"error":   "Invalid Authorization header format",
-					"message": "Please provide a valid token",
-				})
-				c.Abort()
-				return
-			}
-
-			log.Println("Token found in Authorization header")
-			token = tokenparts[1]
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error":   "Authorization token not found",
+				"message": "Please provide a valid token by login or refresh your token",
+			})
+			c.Abort()
+			return
 		}
 
 		claims, err := validateJWTToken(token)
