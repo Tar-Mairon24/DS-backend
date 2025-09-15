@@ -24,11 +24,6 @@ type UserLoginData struct {
 	Password string `json:"password"`
 }
 
-type UserLoginResponse struct {
-	Token string `json:"token"`
-	User  *UserResponse `json:"user"`
-}
-
 type JWTClaims struct {
 	Username string `json:"username"`
 	Email    string `json:"email"`

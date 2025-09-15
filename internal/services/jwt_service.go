@@ -52,38 +52,55 @@ func GenerateToken(user *models.User) (string, error) {
 
 func JwtAuthorization() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
-			log.Println("Authorization header missing")
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "Authorization header missing",
-				"message": "Please provide a valid token",
-			})
-			c.Abort()
-			return 
+		var token string
+		if cookieToken, err := c.Cookie("token"); err == nil && cookieToken != "" {
+			log.Println("Token found in cookie")
+			token = cookieToken
+		} else {
+			authHeader := c.GetHeader("Authorization")
+			if authHeader == "" {
+				log.Println("Authorization header missing")
+				c.JSON(http.StatusUnauthorized, gin.H{
+					"error":   "Authorization header missing",
+					"message": "Please provide a valid token",
+				})
+				c.Abort()
+				return
+			}
+
+			tokenparts := strings.Split(authHeader, " ")
+			if len(tokenparts) != 2 || tokenparts[0] != "Bearer" {
+				log.Println("Invalid Authorization header format")
+				c.JSON(http.StatusUnauthorized, gin.H{
+					"error":   "Invalid Authorization header format",
+					"message": "Please provide a valid token",
+				})
+				c.Abort()
+				return
+			}
+
+			log.Println("Token found in Authorization header")
+			token = tokenparts[1]
 		}
 
-		tokenparts := strings.Split(authHeader, " ")
-		if len(tokenparts) != 2 || tokenparts[0] != "Bearer" {
-			log.Println("Invalid Authorization header format")
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "Invalid Authorization header format",
-				"message": "Please provide a valid token",
-			})
-			c.Abort()
-			return 
-		}
-
-		token := tokenparts[1]
 		claims, err := validateJWTToken(token)
 		if err != nil {
+			if err.Error() == "token has expired" {
+				log.Println("Token has expired")
+				c.JSON(http.StatusUnauthorized, gin.H{
+					"error":   "Token has expired",
+					"message": "Please refresh your token or login again",
+				})
+				c.Abort()
+				return
+			}
 			log.Println("Token validation error:", err)
 			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "Invalid token",
+				"error":   "Invalid token",
 				"message": "Please provide a valid token",
 			})
 			c.Abort()
-			return 
+			return
 		}
 
 		c.Set("email", claims.Email)
@@ -108,6 +125,9 @@ func validateJWTToken(tokenString string) (*models.JWTClaims, error) {
 
 	if err != nil {
 		log.Println("Error parsing token:", err)
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			return nil, errors.New("token has expired")
+		}
 		return nil, err
 	}
 

@@ -58,7 +58,7 @@ func (ctrl *UserController) Login(c *gin.Context) {
 		return
 	}
 
-	user, err := ctrl.UserService.Login(loginData.Email, loginData.Password)
+	user, token, err := ctrl.UserService.Login(loginData.Email, loginData.Password)
 	if err != nil {
 		log.Println("Login error:", err)
 		if err.Error() == "no such user found" {
@@ -71,6 +71,7 @@ func (ctrl *UserController) Login(c *gin.Context) {
 		return
 	}
 
+	c.SetCookie("token", token, 3600, "/", "", false, true)
 	c.JSON(http.StatusOK, user)
 }
 

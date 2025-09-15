@@ -38,37 +38,34 @@ func (service *UserService) GetUserByID(id int) (*models.UserResponse, error) {
 }
 
 // Function to retrieve a user by email and password
-func (service *UserService) Login(email, password string) (*models.UserLoginResponse, error) {
+func (service *UserService) Login(email string, password string) (*models.UserResponse, string, error) {
+	if email == "" || password == "" {
+		log.Println("Email and password must be provided")
+		return nil, "", errors.New("email and password must be provided")
+	}
+
 	user := &models.User{}
-	query := "select id_usuario, usuario, nombre_usuario, rol from Usuarios where usuario = ?;"
-	err := service.DB.QueryRow(query, email).Scan(&user.ID, &user.Email, &user.Nombre, &user.Rol)
+	query := "select id_usuario, usuario, nombre_usuario, password_usuario, rol from Usuarios where usuario = ?;"
+	err := service.DB.QueryRow(query, email).Scan(&user.ID, &user.Email, &user.Nombre, &user.Password, &user.Rol)
 
 	if err != nil {
 		log.Println("Error fetching user:", err)
-		return nil, errors.New("no such user found")
-	}
-
-	if user.Password == "" {
-		log.Println("User not found")
-		return nil, errors.New("no such user found")
+		return nil, "", errors.New("no such user found")
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil {
 		log.Println("Password mismatch:", err)
-		return nil, errors.New("invalid credentials")
+		return nil, "", errors.New("invalid credentials")
 	}
 
 	token, err := GenerateToken(user)
 	if err != nil {
 		log.Println("Error generating token:", err)
-		return nil, errors.New("failed to generate token")
+		return nil, "", errors.New("failed to generate token")
 	}
 
-	return &models.UserLoginResponse{
-		Token: token,
-		User:  user.ToResponse(),
-	}, nil
+	return user.ToResponse(), token, nil
 }
 
 func (service *UserService) CreateUser(user *models.User) (*models.UserResponse, error) {
