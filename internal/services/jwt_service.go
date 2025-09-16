@@ -1,0 +1,122 @@
+package services
+
+import (
+	"errors"
+	"log"
+	"net/http"
+	"os"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
+
+	"backend/internal/models"
+)
+
+func GenerateToken(user *models.User) (string, error) {
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		log.Fatal("JWT_SECRET environment variable is not set")
+		return "", errors.New("JWT secret not set")
+	}
+	expiration := time.Now().Add(24 * time.Hour)
+
+	if user.Email == "" || user.Rol == "" || user.Nombre == "" {
+		return "", errors.New("email, role and name must be provided")
+	}
+
+	claims := &models.JWTClaims{
+		Username: user.Nombre,
+		Email:    user.Email,
+		Rol:      user.Rol,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expiration),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			NotBefore: jwt.NewNumericDate(time.Now()),
+			Subject:   user.Email,
+			Issuer:    "desarrollo-seguro-backend",
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString([]byte(secret))
+	if err != nil {
+		log.Println("Error signing token:", err)
+		return "", err
+	}
+
+	log.Println("Generated token for user:", user.Email)
+	return tokenString, nil
+}
+
+func JwtAuthorization() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var token string
+		if cookieToken, err := c.Cookie("token"); err == nil && cookieToken != "" {
+			log.Println("Token found in cookie")
+			token = cookieToken
+		} else {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error":   "Authorization token not found",
+				"message": "Please provide a valid token by login or refresh your token",
+			})
+			c.Abort()
+			return
+		}
+
+		claims, err := validateJWTToken(token)
+		if err != nil {
+			if err.Error() == "token has expired" {
+				log.Println("Token has expired")
+				c.JSON(http.StatusUnauthorized, gin.H{
+					"error":   "Token has expired",
+					"message": "Please refresh your token or login again",
+				})
+				c.Abort()
+				return
+			}
+			log.Println("Token validation error:", err)
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error":   "Invalid token",
+				"message": "Please provide a valid token",
+			})
+			c.Abort()
+			return
+		}
+
+		c.Set("email", claims.Email)
+		c.Set("username", claims.Username)
+		c.Set("rol", claims.Rol)
+		c.Set("claims", claims)
+		c.Next()
+	}
+}
+
+func validateJWTToken(tokenString string) (*models.JWTClaims, error) {
+	if tokenString == "" {
+		return nil, errors.New("token is empty")
+	}
+
+	parsedToken, err := jwt.ParseWithClaims(tokenString, &models.JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
+		return []byte(os.Getenv("JWT_SECRET")), nil
+	})
+
+	if err != nil {
+		log.Println("Error parsing token:", err)
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			return nil, errors.New("token has expired")
+		}
+		return nil, err
+	}
+
+	if claims, ok := parsedToken.Claims.(*models.JWTClaims); ok && parsedToken.Valid {
+		log.Println("Token valid for user:", claims.Email)
+		return claims, nil
+	}
+
+	log.Println("Invalid token")
+	return nil, errors.New("invalid token")
+}

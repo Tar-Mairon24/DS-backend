@@ -1,12 +1,14 @@
 package controllers
 
 import (
-	"backend/internal/services"
 	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+
+	"backend/internal/models"
+	"backend/internal/services"
 )
 
 type UserController struct {
@@ -25,6 +27,7 @@ func (ctrl *UserController) GetUser(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
+		log.Println("Error converting user ID:", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
 		return
 	}
@@ -36,6 +39,7 @@ func (ctrl *UserController) GetUser(c *gin.Context) {
 	}
 
 	if user == nil {
+		log.Println("User not found")
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}
@@ -46,22 +50,47 @@ func (ctrl *UserController) GetUser(c *gin.Context) {
 // POST /login
 // Login method for the UserController
 func (ctrl *UserController) Login(c *gin.Context) {
-	var loginData struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
+	loginData := models.UserLoginData{}
 
 	if err := c.ShouldBindJSON(&loginData); err != nil {
+		log.Println("Error binding login data:", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
 
-	log.Print("Login data:", loginData)
-	user, err := ctrl.UserService.Login(loginData.Email, loginData.Password)
+	user, token, err := ctrl.UserService.Login(loginData.Email, loginData.Password)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		log.Println("Login error:", err)
+		if err.Error() == "no such user found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		} else if err.Error() == "invalid credentials" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to login"})
+		}
 		return
 	}
 
+	c.SetCookie("token", token, 3600, "/", "", false, true)
 	c.JSON(http.StatusOK, user)
 }
+
+// POST /create
+func (ctrl *UserController) CreateUser(c *gin.Context){
+	user := models.User{}
+
+	if err := c.ShouldBindJSON(&user); err != nil {
+		log.Println("Error binding user data:", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	createdUser, err := ctrl.UserService.CreateUser(&user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, createdUser)
+}
+

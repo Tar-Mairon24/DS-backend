@@ -45,9 +45,15 @@ ENGINE = InnoDB;
 -- Table `inmosoftDB`.`Usuarios`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `inmosoftDB`.`Usuarios` (
+  `id_usuario` INT NOT NULL AUTO_INCREMENT,
   `usuario` VARCHAR(100)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NOT NULL,
-  `password_usuario` VARCHAR(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
-  PRIMARY KEY (`usuario`))
+  `nombre_usuario` VARCHAR(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
+  `password_usuario` VARCHAR(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
+  `rol` ENUM('admin', 'agente') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
+  `creado_en` DATETIME NULL,
+  `actualizado_en` DATETIME NULL,
+  PRIMARY KEY (`id_usuario`),
+  UNIQUE INDEX `usuario_UNIQUE` (`usuario` ASC) VISIBLE)
 ENGINE = InnoDB;
 
 
@@ -55,7 +61,7 @@ ENGINE = InnoDB;
 -- Table `inmosoftDB`.`Propiedades`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `inmosoftDB`.`Propiedades` (
-  `id_propiedad` INT NOT NULL,
+  `id_propiedad` INT NOT NULL AUTO_INCREMENT,
   `titulo` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
   `fecha_alta` VARCHAR(100) NULL,
   `direccion` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
@@ -79,11 +85,11 @@ CREATE TABLE IF NOT EXISTS `inmosoftDB`.`Propiedades` (
   `observaciones` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci   NULL,
   `id_tipo_propiedad` INT NOT NULL,
   `id_propietario` INT NOT NULL,
-  `usuario` VARCHAR(100)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NOT NULL,
+  `id_usuario` INT NOT NULL,
   PRIMARY KEY (`id_propiedad`),
   INDEX `fk_Propiedades_Tipo_propiedad2_idx` (`id_tipo_propiedad` ASC) VISIBLE,
   INDEX `fk_Propiedades_Propietario2_idx` (`id_propietario` ASC) VISIBLE,
-  INDEX `fk_Propiedades_Usuarios1_idx` (`usuario` ASC) VISIBLE,
+  INDEX `fk_Propiedades_Usuarios1_idx` (`id_usuario` ASC) VISIBLE,
   CONSTRAINT `fk_Propiedades_Tipo_propiedad2`
     FOREIGN KEY (`id_tipo_propiedad`)
     REFERENCES `inmosoftDB`.`Tipo_Propiedad` (`id_tipo_propiedad`)
@@ -95,8 +101,8 @@ CREATE TABLE IF NOT EXISTS `inmosoftDB`.`Propiedades` (
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_Propiedades_Usuarios1`
-    FOREIGN KEY (`usuario`)
-    REFERENCES `inmosoftDB`.`Usuarios` (`usuario`)
+    FOREIGN KEY (`id_usuario`)
+    REFERENCES `inmosoftDB`.`Usuarios` (`id_usuario`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
@@ -106,7 +112,7 @@ ENGINE = InnoDB;
 -- Table `inmosoftDB`.`Imagenes`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `inmosoftDB`.`Imagenes` (
-  `id_imagen` INT NOT NULL,
+  `id_imagen` INT NOT NULL AUTO_INCREMENT,
   `ruta_imagen` VARCHAR(2048) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
   `descripcion_imagen` VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
   `principal` TINYINT NULL,
@@ -125,7 +131,7 @@ ENGINE = InnoDB;
 -- Table `inmosoftDB`.`ImagenesProspecto`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `inmosoftDB`.`ImagenesProspecto` (
-  `id_imagen` INT NOT NULL,
+  `id_imagen` INT NOT NULL AUTO_INCREMENT,
   `ruta_imagen` VARCHAR(2048) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
   `descripcion_imagen` VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
   `principal` TINYINT NULL,
@@ -143,7 +149,7 @@ ENGINE = InnoDB;
 -- Table `inmosoftDB`.`Estado_Propiedades`
 -- -----------------------------------------------------
   CREATE TABLE IF NOT EXISTS `inmosoftDB`.`Estado_Propiedades` (
-    `id_estado_propiedades` INT NOT NULL,
+    `id_estado_propiedades` INT NOT NULL AUTO_INCREMENT,
     `tipo_transaccion` VARCHAR(255) NOT NULL,
     `estado` VARCHAR(255) NOT NULL,
     `fecha_cambio_estado` VARCHAR(100) NULL,
@@ -162,7 +168,7 @@ ENGINE = InnoDB;
 -- Table `inmosoftDB`.`Contratos`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `inmosoftDB`.`Contratos` (
-  `id_contrato` INT NOT NULL,
+  `id_contrato` INT NOT NULL AUTO_INCREMENT,
   `titulo_contrato` VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL,
   `descripcion_contrato` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci   NULL,
   `tipo` VARCHAR(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
@@ -182,7 +188,7 @@ ENGINE = InnoDB;
 -- Table `inmosoftDB`.`Prospecto`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `inmosoftDB`.`Prospecto` (
-  `id_cliente` INT NOT NULL,
+  `id_cliente` INT NOT NULL AUTO_INCREMENT,
   `nombre_prospecto` VARCHAR(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
   `apellido_paterno_prospecto` VARCHAR(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
   `apellido_materno_prospecto` VARCHAR(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
@@ -196,19 +202,19 @@ ENGINE = InnoDB;
 -- Table `inmosoftDB`.`Citas`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `inmosoftDB`.`Citas` (
-  `id_citas` INT NOT NULL,
+  `id_citas` INT NOT NULL AUTO_INCREMENT,
   `titulo_cita` VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL,
   `fecha_cita` VARCHAR(100) NULL,
   `hora_cita` INT NULL,
   `descripcion_cita` VARCHAR(2000) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL,
-  `usuario` VARCHAR(100)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NOT NULL,
+  `id_usuario` INT NOT NULL,
   `id_cliente` INT NOT NULL,
   PRIMARY KEY (`id_citas`),
-  INDEX `fk_Citas_Usuarios1_idx` (`usuario` ASC) VISIBLE,
+  INDEX `fk_Citas_Usuarios1_idx` (`id_usuario` ASC) VISIBLE,
   INDEX `fk_Citas_Prospecto1_idx` (`id_cliente` ASC) VISIBLE,
   CONSTRAINT `fk_Citas_Usuarios1`
-    FOREIGN KEY (`usuario`)
-    REFERENCES `inmosoftDB`.`Usuarios` (`usuario`)
+    FOREIGN KEY (`id_usuario`)
+    REFERENCES `inmosoftDB`.`Usuarios` (`id_usuario`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_Citas_Prospecto1`
@@ -224,7 +230,7 @@ ENGINE = InnoDB;
 -- Table `inmosoftDB`.`Documentos_Anexos`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `inmosoftDB`.`Documentos_Anexos` (
-  `id_documento_anexo` INT NOT NULL,
+  `id_documento_anexo` INT NOT NULL AUTO_INCREMENT,
   `ruta_documento` VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
   `descripcion_documento_anexo` VARCHAR(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
   `id_propiedad` INT NOT NULL,
