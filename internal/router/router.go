@@ -79,6 +79,7 @@ func userRoutes(group *gin.RouterGroup, userController *controllers.UserControll
 	group.POST("/users/create", userController.CreateUser)
 	users := group.Group("/users")
 	users.Use(services.JwtAuthorization())
+	users.Use(services.ValidateUserAdmin())
 	{
 		users.GET(":id", userController.GetUser)
 	}
