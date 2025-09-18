@@ -21,14 +21,14 @@ func GenerateToken(user *models.User) (string, error) {
 	}
 	expiration := time.Now().Add(24 * time.Hour)
 
-	if user.Email == "" || user.Rol == "" || user.Nombre == "" {
+	if user.Email == "" || user.Role == "" || user.Nombre == "" {
 		return "", errors.New("email, role and name must be provided")
 	}
 
 	claims := &models.JWTClaims{
 		Username: user.Nombre,
 		Email:    user.Email,
-		Rol:      user.Rol,
+		Role:      user.Role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expiration),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -53,7 +53,6 @@ func JwtAuthorization() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var token string
 		if cookieToken, err := c.Cookie("token"); err == nil && cookieToken != "" {
-			log.Println("Token found in cookie")
 			token = cookieToken
 		} else {
 			c.JSON(http.StatusUnauthorized, gin.H{
@@ -86,7 +85,7 @@ func JwtAuthorization() gin.HandlerFunc {
 
 		c.Set("email", claims.Email)
 		c.Set("username", claims.Username)
-		c.Set("rol", claims.Rol)
+		c.Set("role", claims.Role)
 		c.Set("claims", claims)
 		c.Next()
 	}
@@ -119,4 +118,51 @@ func validateJWTToken(tokenString string) (*models.JWTClaims, error) {
 
 	log.Println("Invalid token")
 	return nil, errors.New("invalid token")
+}
+
+func ValidateUserAdmin() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var token string
+		if cookieToken, err := c.Cookie("token"); err == nil && cookieToken != "" {
+			token = cookieToken
+		} else {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error":   "Authorization token not found",
+				"message": "Please provide a valid token by login or refresh your token",
+			})
+			c.Abort()
+			return
+		}
+
+		role, err := getRoleFromToken(token)
+		if err != nil {
+			log.Println("Error getting role from token:", err)
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error":   "Invalid token",
+				"message": "Please provide a valid token",
+			})
+			c.Abort()
+			return
+		}
+
+		if role != "admin" {
+			c.JSON(http.StatusForbidden, gin.H{
+				"error":   "Forbidden",
+				"message": "You do not have permission to access this resource",
+			})
+			c.Abort()
+			return
+		}
+
+		c.Next()
+	}
+}
+
+func getRoleFromToken(tokenString string) (string, error) {
+	claims, err := validateJWTToken(tokenString)
+	if err != nil {
+		return "", err
+	}
+
+	return claims.Role, nil
 }
