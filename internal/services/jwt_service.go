@@ -52,7 +52,7 @@ func GenerateToken(user *models.User) (string, error) {
 func JwtAuthorization() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var token string
-		if cookieToken, err := c.Cookie("token"); err == nil && cookieToken != "" {
+		if cookieToken, err := c.Cookie("JWTtoken"); err == nil && cookieToken != "" {
 			token = cookieToken
 		} else {
 			c.JSON(http.StatusUnauthorized, gin.H{
@@ -123,9 +123,11 @@ func validateJWTToken(tokenString string) (*models.JWTClaims, error) {
 func ValidateUserAdmin() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var token string
-		if cookieToken, err := c.Cookie("token"); err == nil && cookieToken != "" {
+		if cookieToken, err := c.Cookie("JWTtoken"); err == nil && cookieToken != "" {
+			log.Println("Cookie token found:", cookieToken)
 			token = cookieToken
 		} else {
+			log.Println("No token found in cookies")
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"error":   "Authorization token not found",
 				"message": "Please provide a valid token by login or refresh your token",
