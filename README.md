@@ -1,44 +1,45 @@
 # 🛡️ DS-Backend
 
-> Backend para la clase de **Desarrollo Seguro** - Sistema de gestión seguro con Go y MySQL
-
-## 📋 Tabla de Contenidos
-
-- [Descripción](#descripción)
-- [Tecnologías](#tecnologías)
-- [Requisitos Previos](#requisitos-previos)
-- [Instalación](#instalación)
-- [Configuración](#configuración)
-- [Uso](#uso)
-- [API Endpoints](#api-endpoints)
-- [Testing](#testing)
-- [Troubleshooting](#troubleshooting)
-- [Contribución](#contribución)
+> Backend para la clase de **Desarrollo Seguro** - Sistema de gestión inmobiliaria seguro con Go y MySQL
 
 ## 📖 Descripción
 
-Este proyecto es un backend desarrollado en **Go** que implementa las mejores prácticas de seguridad para aplicaciones web. Utiliza **MySQL** como base de datos y está completamente dockerizado para facilitar el desarrollo y despliegue.
+InmoSoft Backend es un sistema de gestión inmobiliaria desarrollado en **Go** que implementa las mejores prácticas de seguridad para aplicaciones web. Permite la gestión de propiedades, propietarios, prospectos, citas y contratos con un sistema robusto de autenticación JWT y autorización basada en roles.
 
 ## 🚀 Tecnologías
 
-- **Backend**: Go (Golang)
+- **Backend**: Go (Golang) 1.21+
 - **Base de Datos**: MySQL 8.0
 - **Containerización**: Docker & Docker Compose
-- **ORM**: GORM
-- **Router**: Gin
-- **Autenticación**: JWT
+- **Database Driver**: database/sql con MySQL driver
+- **Router**: Gin Web Framework
+- **Autenticación**: JWT (JSON Web Tokens)
+- **Hashing**: bcrypt para contraseñas
+- **CORS**: gin-contrib/cors
+
+## ✨ Características
+
+- 🔐 **Autenticación JWT** con cookies HTTP-only
+- 👥 **Sistema de roles** (Admin, Agente)
+- 🏠 **Gestión de propiedades** completa
+- 👤 **Administración de propietarios y prospectos**
+- 📅 **Sistema de citas**
+- 📄 **Gestión de contratos y documentos**
+- 🖼️ **Manejo de imágenes**
+- 🔒 **Seguridad robusta** con middleware de autorización
+- 🐳 **Completamente dockerizado**
 
 ## 📋 Requisitos Previos
 
 Antes de comenzar, asegúrate de tener instalado:
 
 ### Windows 🪟
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) v4.0+
 - [Git](https://git-scm.com/download/win)
 
 ### Linux/macOS 🐧🍎
-- [Docker](https://docs.docker.com/engine/install/)
-- [Docker Compose](https://docs.docker.com/compose/install/)
+- [Docker](https://docs.docker.com/engine/install/) v20.10+
+- [Docker Compose](https://docs.docker.com/compose/install/) v2.0+
 - Git
 
 ## 🔧 Instalación
@@ -59,17 +60,17 @@ cd DS-backend
 
 ### 2. Configuración del entorno
 
-Renombra el archivo de ejemplo y configura las variables de entorno:
+Crea el archivo de variables de entorno:
 
 **Windows:**
 ```powershell
-copy env-example .env
-notepad .env  # o tu editor
+copy .env.example .env
+notepad .env
 ```
 
 **Linux/macOS:**
 ```bash
-cp env-example .env
+cp .env.example .env
 nano .env  # o vim .env
 ```
 
@@ -78,19 +79,22 @@ nano .env  # o vim .env
 Edita el archivo `.env` con tus configuraciones **sin espacios alrededor del =**:
 
 ```env
-# Base de datos
-DB_USER=tu_usuario
-DB_PASSWORD=tu_password_segura
+# Base de datos MySQL
+DB_USER=inmosoft_user
+DB_PASSWORD=tu_password_muy_segura_123
 DB_HOST=localhost
 DB_PORT=3306
-DB_NAME=ds_database
+DB_NAME=inmosoftDB
+USER_PASSWORD=tu_password_muy_segura_123
 
 # API
 API_PORT=8080
 
-# Seguridad
-JWT_SECRET=tu_jwt_secret_muy_seguro
+# Seguridad JWT
+JWT_SECRET=tu_jwt_secret_super_seguro_con_mas_de_32_caracteres
 ```
+
+> ⚠️ **Importante**: Usa contraseñas y secretos fuertes en producción
 
 ## 🚀 Uso
 
@@ -99,9 +103,6 @@ JWT_SECRET=tu_jwt_secret_muy_seguro
 **Primera vez o después de cambios:**
 
 **Windows (PowerShell/CMD):**
-
-Puedes utilizar docker desktop con compose
-
 ```powershell
 docker-compose up -d --build
 ```
@@ -113,13 +114,22 @@ docker compose up -d --build
 
 ### Comandos útiles
 
-**Ver logs:**
+**Ver logs en tiempo real:**
 ```bash
 # Windows
 docker-compose logs -f
 
 # Linux/macOS
 docker compose logs -f
+```
+
+**Ver logs específicos:**
+```bash
+# Backend
+docker logs ds_backend -f
+
+# Base de datos
+docker logs ds_database -f
 ```
 
 **Parar servicios:**
@@ -131,7 +141,7 @@ docker-compose down
 docker compose down
 ```
 
-**Reiniciar completamente (con rebuild):**
+**Reiniciar completamente:**
 ```bash
 # Windows
 docker-compose down
@@ -142,70 +152,105 @@ docker compose down
 docker compose up -d --build
 ```
 
-**Ver contenedores activos:**
+**Acceder a la base de datos:**
 ```bash
-docker ps
+docker exec -it ds_database mysql -u root -p inmosoftDB
 ```
 
 ## 🌐 API Endpoints
 
-Una vez que el servidor esté corriendo, la API estará disponible en: `http://localhost:3000`
+La API estará disponible en: `http://localhost:8080`
 
-### Ejemplos de endpoints:
+### Autenticación
+| Método | Endpoint | Descripción | Auth |
+|--------|----------|-------------|------|
+| POST | `/api/v1/auth/login` | Iniciar sesión | ❌ |
+| POST | `/api/v1/auth/logout` | Cerrar sesión | ✅ |
 
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| GET    | `/health` | Verificar estado del servidor |
-| POST   | `/auth/login` | Iniciar sesión |
-| POST   | `/auth/register` | Registrar usuario |
-| GET    | `/api/users` | Obtener usuarios (requiere auth) |
+### Usuarios
+| Método | Endpoint | Descripción | Roles |
+|--------|----------|-------------|-------|
+| GET | `/api/v1/users/all` | Listar todos los usuarios | Admin |
+| GET | `/api/v1/users/:id` | Obtener usuario específico | Admin, Owner |
+| POST | `/api/v1/users/create` | Crear nuevo usuario | Admin |
+| PUT | `/api/v1/users/:id` | Actualizar usuario | Admin, Owner |
+| DELETE | `/api/v1/users/:id` | Eliminar usuario | Admin |
 
-## 🧪 Testing
+### Propiedades
+| Método | Endpoint | Descripción | Roles |
+|--------|----------|-------------|-------|
+| GET | `/api/v1/propiedades/all` | Listar propiedades | Todos |
+| GET | `/api/v1/propiedades/:id` | Obtener propiedad | Todos |
+| POST | `/api/v1/propiedades/create` | Crear propiedad | Admin, Agente |
+| PUT | `/api/v1/propiedades/update/:id` | Actualizar propiedad | Admin, Agente |
+| DELETE | `/api/v1/propiedades/eliminar/:id` | Eliminar propiedad | Admin |
 
-### Usando Postman
-1. Descarga [Postman Desktop](https://www.postman.com/downloads/)
-2. Importa la colección de endpoints (si está disponible)
-3. Configura el environment con `base_url: http://localhost:3000`
+### Citas
+| Método | Endpoint | Descripción | Roles |
+|--------|----------|-------------|-------|
+| GET | `/api/v1/citas/all/:id` | Obtener citas del usuario | Admin, Owner |
+| POST | `/api/v1/citas/create` | Crear cita | Todos |
+| PUT | `/api/v1/citas/update/:id` | Actualizar cita | Admin, Owner |
+| DELETE | `/api/v1/citas/eliminar/:id` | Eliminar cita | Admin |
 
-### Usando curl
+### Otros endpoints disponibles:
+- **Propietarios**: `/api/v1/propietarios/*`
+- **Prospectos**: `/api/v1/prospectos/*`
+- **Contratos**: `/api/v1/contratos/*`
+- **Tipos de propiedad**: `/api/v1/tipos-propiedad/*`
+- **Imágenes**: `/api/v1/imagenes/*`
+- **Documentos**: `/api/v1/documentos/*`
 
-**Verificar que el servidor esté corriendo:**
-```bash
-curl http://localhost:8080/health
+## 🔐 Autenticación y Autorización
+
+### Sistema de Roles
+
+**Admin** 👑
+- Acceso completo al sistema
+- Gestión de usuarios
+- Eliminación de recursos
+- Visualización de todos los datos
+
+**Agente** 🏠
+- Gestión de propiedades
+- Creación de citas y contratos
+- Acceso solo a sus propios recursos
+- No puede eliminar usuarios
+
+### Autenticación JWT
+
+El sistema usa **cookies HTTP-only** para mayor seguridad:
+
+```javascript
+// Login (Frontend)
+const response = await fetch('/api/v1/auth/login', {
+    method: 'POST',
+    credentials: 'include', // Importante para cookies
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+});
+
+// Requests autenticados
+const data = await fetch('/api/v1/users/profile', {
+    credentials: 'include' // Cookie se envía automáticamente
+});
 ```
 
-## 🔍 Troubleshooting
-
-### Problemas comunes:
-
-**❌ "Database is not reachable"**
-- Verifica que MySQL esté corriendo: `docker ps`
-- Revisa los logs: `docker logs ds_database`
-
-**❌ "Port already in use"**
-- Cambia el puerto en `.env` o libera el puerto 8080
-- En Windows: `netstat -ano | findstr :8080`
-- En Linux: `sudo lsof -i :8080`
-
-**❌ Variables de entorno no cargadas**
-- Asegúrate de no tener espacios en el archivo `.env`
-- Formato correcto: `DB_USER=valor` (sin espacios)
-
-### Logs útiles:
+### Reset completo del proyecto:
 
 ```bash
-# Ver logs del backend
-docker logs ds_backend
+# Parar y eliminar todo
+docker-compose down -v
+docker system prune -f
 
-# Ver logs de MySQL
-docker logs ds_database
-
-# Ver logs en tiempo real
-docker logs -f ds_backend
+# Reconstruir desde cero
+docker-compose up -d --build
+```
 
 ## 📝 Notas de Seguridad
 
-- ⚠️ Nunca commitees el archivo `.env` al repositorio
-- 🔐 Usa contraseñas seguras para la base de datos
-- 🛡️ El JWT secret debe ser único y complejo
-
+### En Desarrollo:
+- ✅ JWT tokens en cookies HTTP-only
+- ✅ Hashing de contraseñas con bcrypt
+- ✅ Validación de entrada
+- ✅ CORS configurado correctamente

@@ -26,7 +26,7 @@ type UserLoginData struct {
 type JWTClaims struct {
 	Username string `json:"username"`
 	Email    string `json:"email"`
-	Role     string `json:"role"`
+	Role     string `json:"rol"`
 	jwt.RegisteredClaims
 }
 
