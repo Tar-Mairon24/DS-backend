@@ -71,7 +71,7 @@ func (ctrl *UserController) Login(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie("token", token, 3600, "/", "", false, true)
+	c.SetCookie("JWTtoken", token, 3600, "/", "", false, true)
 	c.JSON(http.StatusOK, user)
 }
 
