@@ -25,8 +25,8 @@ func NewUserService(db *sql.DB) *UserService {
 // Function to retrieve a user by ID
 func (service *UserService) GetUserByID(id int) (*models.UserResponse, error) {
 	user := &models.User{}
-	query := "SELECT id_usuario, usuario, nombre_usuario, rol FROM Usuarios WHERE id_usuario = ?"
-	err := service.DB.QueryRow(query, id).Scan(&user.ID, &user.Email, &user.Nombre, &user.Rol)
+	query := "SELECT id_usuario, usuario, nombre_usuario, role FROM Usuarios WHERE id_usuario = ?"
+	err := service.DB.QueryRow(query, id).Scan(&user.ID, &user.Email, &user.Nombre, &user.Role)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -45,8 +45,8 @@ func (service *UserService) Login(email string, password string) (*models.UserRe
 	}
 
 	user := &models.User{}
-	query := "select id_usuario, usuario, nombre_usuario, password_usuario, rol from Usuarios where usuario = ?;"
-	err := service.DB.QueryRow(query, email).Scan(&user.ID, &user.Email, &user.Nombre, &user.Password, &user.Rol)
+	query := "select id_usuario, usuario, nombre_usuario, password_usuario, role from Usuarios where usuario = ?;"
+	err := service.DB.QueryRow(query, email).Scan(&user.ID, &user.Email, &user.Nombre, &user.Password, &user.Role)
 
 	if err != nil {
 		log.Println("Error fetching user:", err)
@@ -72,7 +72,7 @@ func (service *UserService) CreateUser(user *models.User) (*models.UserResponse,
 	if user == nil {
 		return nil, errors.New("user is nil")
 	}
-	if user.Email == "" || user.Password == "" || user.Nombre == "" || user.Rol == "" {
+	if user.Email == "" || user.Password == "" || user.Nombre == "" || user.Role == "" {
 		return nil, errors.New("missing required user fields")
 	}
 
@@ -89,8 +89,8 @@ func (service *UserService) CreateUser(user *models.User) (*models.UserResponse,
 		return nil, err
 	}
 
-	query := "INSERT INTO Usuarios (usuario, nombre_usuario, password_usuario, rol, creado_en, actualizado_en) VALUES (?, ?, ?, ?, ?, ?)"
-	_, err = service.DB.Exec(query, user.Email, user.Nombre, hashedPassword, user.Rol, time.Now(), time.Now())
+	query := "INSERT INTO Usuarios (usuario, nombre_usuario, password_usuario, role, creado_en, actualizado_en) VALUES (?, ?, ?, ?, ?, ?)"
+	_, err = service.DB.Exec(query, user.Email, user.Nombre, hashedPassword, user.Role, time.Now(), time.Now())
 	if err != nil {
 		log.Println("Error creating user:", err)
 		return nil, err
