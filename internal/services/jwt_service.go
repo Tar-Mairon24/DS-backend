@@ -21,14 +21,14 @@ func GenerateToken(user *models.User) (string, error) {
 	}
 	expiration := time.Now().Add(24 * time.Hour)
 
-	if user.Email == "" || user.Rol == "" || user.Nombre == "" {
+	if user.Email == "" || user.Role == "" || user.Nombre == "" {
 		return "", errors.New("email, role and name must be provided")
 	}
 
 	claims := &models.JWTClaims{
 		Username: user.Nombre,
 		Email:    user.Email,
-		Rol:      user.Rol,
+		Role:      user.Role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expiration),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -85,7 +85,7 @@ func JwtAuthorization() gin.HandlerFunc {
 
 		c.Set("email", claims.Email)
 		c.Set("username", claims.Username)
-		c.Set("rol", claims.Rol)
+		c.Set("role", claims.Role)
 		c.Set("claims", claims)
 		c.Next()
 	}
@@ -164,5 +164,5 @@ func getRoleFromToken(tokenString string) (string, error) {
 		return "", err
 	}
 
-	return claims.Rol, nil
+	return claims.Role, nil
 }
