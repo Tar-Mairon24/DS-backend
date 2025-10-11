@@ -30,6 +30,11 @@ type JWTClaims struct {
 	jwt.RegisteredClaims
 }
 
+type EmailVerification struct {
+	Email string `json:"email"`
+	Code  string `json:"code"`
+}
+
 func (u *User) ToResponse() *UserResponse {
 	return &UserResponse{
 		ID:     u.ID,

@@ -52,6 +52,9 @@ CREATE TABLE IF NOT EXISTS `inmosoftDB`.`Usuarios` (
   `role` ENUM('admin', 'agente') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
   `creado_en` DATETIME NULL,
   `actualizado_en` DATETIME NULL,
+  `borrado_en` DATETIME NULL,
+  `verificado` TINYINT NULL DEFAULT 0,
+  `codigo_verificacion` VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
   PRIMARY KEY (`id_usuario`),
   UNIQUE INDEX `usuario_UNIQUE` (`usuario` ASC) VISIBLE)
 ENGINE = InnoDB;

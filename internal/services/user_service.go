@@ -13,12 +13,14 @@ import (
 
 type UserService struct {
 	DB *sql.DB
+	EmailService *EmailService
 }
 
 // Constructor for the UserService
-func NewUserService(db *sql.DB) *UserService {
+func NewUserService(db *sql.DB, emailService *EmailService) *UserService {
 	return &UserService{
 		DB: db,
+		EmailService: emailService,
 	}
 }
 
@@ -95,5 +97,14 @@ func (service *UserService) CreateUser(user *models.User) (*models.UserResponse,
 		log.Println("Error creating user:", err)
 		return nil, err
 	}
+
+	if service.EmailService != nil {
+        go func(email string) {
+            if err := service.EmailService.SendVerificationEmail(email); err != nil {
+                log.Printf("failed to send verification email to %s: %v", email, err)
+            }
+        }(user.Email)
+    }
+
 	return user.ToResponse(), nil
 }

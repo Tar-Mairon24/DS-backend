@@ -6,11 +6,10 @@ import (
 )
 
 func main() {
-	// Initialize the database connection
+
 	database.InitDB()
 
 	ginRouter := router.SetupRouter()
 
-	// Start the server
 	ginRouter.Run(":8080")
 }
