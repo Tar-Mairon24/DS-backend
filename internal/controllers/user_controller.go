@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -94,3 +95,36 @@ func (ctrl *UserController) CreateUser(c *gin.Context){
 	c.JSON(http.StatusCreated, createdUser)
 }
 
+func (ctrl *UserController) SetPasswordUser(c *gin.Context){
+	idParam := c.Param("id")
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		log.Println("Error converting user ID:", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	var payload struct {
+		Password string `json:"password"`
+	}
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		log.Println("Error binding user data:", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	updatedUser, err := ctrl.UserService.SetPasswordUser(id, payload.Password)
+	if err != nil {
+		if strings.Contains(err.Error(), "password") {
+			log.Println("Password validation error:", err)
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		} else {
+			log.Println("Error setting user password:", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to set user password"})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, updatedUser)
+}	

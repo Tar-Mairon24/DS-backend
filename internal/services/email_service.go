@@ -31,7 +31,6 @@ func (s *EmailService) SendVerificationEmail(toEmail string) error {
 	if apiPort == "" {
 		apiPort = "3000"
 	}
-	//url := fmt.Sprintf("http://localhost:%s/verify-email", apiPort)
 
 	verificationCode := s.GenerateVerificationCode()
 
@@ -57,8 +56,7 @@ func (s *EmailService) SendVerificationEmail(toEmail string) error {
 	message.SetBodyString(mail.TypeTextHTML, fmt.Sprintf(`
 		<html>
 		<body>
-		<p>Bienvenido a la app para Desarrollo Seguro!</p>
-		<p>Por favor verifica tu dirección de correo electrónico haciendo clic en el botón de abajo:</p>
+		<p>Te enviamos este correo para que verificar que eres tú.</p>
 		<p>Tu código de verificación es:</p>
 		<h2>%s</h2>
 		<p>Si no te has registrado en esta cuenta, por favor ignora este correo electrónico.</p>
@@ -75,6 +73,8 @@ func (s *EmailService) SendVerificationEmail(toEmail string) error {
 		log.Fatalf("failed to send mail: %s", err)
 		return err
 	}
+
+	log.Printf("Verification email sent to %s", toEmail)
 
 	return nil
 }
