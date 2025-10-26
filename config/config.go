@@ -3,8 +3,6 @@ package config
 import (
 	"fmt"
 	"os"
-
-	"github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -17,11 +15,6 @@ type Config struct {
 }
 
 func GetConfig() *Config {
-	err := godotenv.Load()
-	if err != nil {
-		fmt.Printf("Error loading .env file: %v", err)
-	}
-
 	return &Config{
 		User:     os.Getenv("DB_USER"),
 		Password: os.Getenv("DB_PASSWORD"),

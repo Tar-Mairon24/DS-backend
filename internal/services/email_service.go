@@ -45,14 +45,18 @@ func (s *EmailService) VerifyEmail(verificacionData models.EmailVerification) (b
 	}
 
 	var userID int
-	query := "SELECT id_usuario FROM Tokens_Verificacion WHERE token = ? AND id_usuario = (SELECT id_usuario FROM Usuarios WHERE usuario = ? ) AND fecha_expiracion > ?"
-	err := s.DB.QueryRow(query, verificacionData.Code, verificacionData.Email, time.Now()).Scan(&userID)
+	var usado int
+	query := "SELECT id_usuario, usado FROM Tokens_Verificacion WHERE token = ? AND id_usuario = (SELECT id_usuario FROM Usuarios WHERE usuario = ? ) AND fecha_expiracion > ?"
+	err := s.DB.QueryRow(query, verificacionData.Code, verificacionData.Email, time.Now()).Scan(&userID, &usado)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return false, errors.New("invalid verification code or email")
 		}
 		log.Println("Error fetching user by verification code:", err)
 		return false, err
+	}
+	if usado == 1 {
+		return false, errors.New("verification code has already been used")
 	}
 
 	updateQuery := "UPDATE Usuarios SET verificado = 1 WHERE id_usuario = ?"
@@ -107,7 +111,7 @@ func (s *EmailService) ResendVerificationEmail(toEmail string) error {
 		return err
 	}
 
-	expirationDate := time.Now().Add(2 * time.Minute)
+	expirationDate := time.Now().Add(48 * time.Hour)
 
 	query = "UPDATE Tokens_Verificacion SET num_renvios = num_renvios + 1, token = ?, fecha_modificacion = ?, fecha_expiracion = ? WHERE id_usuario = ? AND token = ? ORDER BY fecha_creacion DESC LIMIT 1"
 	_, err = s.DB.Exec(query, verificationCode, time.Now(), expirationDate, userID, token)
