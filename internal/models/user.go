@@ -35,6 +35,10 @@ type EmailVerification struct {
 	Code  string `json:"code"`
 }
 
+type EmailResendRequest struct {
+	Email string `json:"email"`
+}
+
 func (u *User) ToResponse() *UserResponse {
 	return &UserResponse{
 		ID:     u.ID,

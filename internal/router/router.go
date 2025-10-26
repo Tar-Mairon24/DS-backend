@@ -91,6 +91,7 @@ func userRoutes(group *gin.RouterGroup, userController *controllers.UserControll
 
 func verificarEmailRoutes(group *gin.RouterGroup, verificarEmailController *controllers.VerificarEmailController) {
 	group.GET("/verificar-email", verificarEmailController.VerificarEmail)
+	group.POST("/reenviar-codigo-verificacion", verificarEmailController.ReenviarCodigoVerificacion)
 }
 
 func propiedadRoutes(group *gin.RouterGroup, propiedadController *controllers.Propiedad_Controller) {

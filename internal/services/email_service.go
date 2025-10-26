@@ -8,6 +8,7 @@ import (
 	"log"
 	"math/big"
 	"os"
+	"time"
 
 	"github.com/wneessen/go-mail"
 
@@ -24,25 +25,135 @@ func NewEmailService(db *sql.DB) *EmailService {
 	}
 }
 
-func (s *EmailService) SendVerificationEmail(toEmail string) error {
+func (s *EmailService) SendVerificationEmail(toEmail string, motivo string) error {
+	verificationCode := s.generateVerificationCode()
+
+	if err := s.saveVerificationCode(toEmail, verificationCode, motivo); err != nil {
+		return err
+	}
+
+	if err := s.sendEmail(toEmail, verificationCode); err != nil {
+		return err	
+	}
+
+	return nil
+}
+
+func (s *EmailService) VerifyEmail(verificacionData models.EmailVerification) (bool, error) {
+	if verificacionData.Code == "" || verificacionData.Email == "" {
+		return false, errors.New("verification code and email must be provided")
+	}
+
+	var userID int
+	query := "SELECT id_usuario FROM Tokens_Verificacion WHERE token = ? AND id_usuario = (SELECT id_usuario FROM Usuarios WHERE usuario = ? ) AND fecha_expiracion > ?"
+	err := s.DB.QueryRow(query, verificacionData.Code, verificacionData.Email, time.Now()).Scan(&userID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, errors.New("invalid verification code or email")
+		}
+		log.Println("Error fetching user by verification code:", err)
+		return false, err
+	}
+
+	updateQuery := "UPDATE Usuarios SET verificado = 1 WHERE id_usuario = ?"
+	_, err = s.DB.Exec(updateQuery, userID)
+	if err != nil {
+		log.Println("Error updating user verification status:", err)
+		return false, err
+	}
+	updateQuery = "UPDATE Tokens_Verificacion SET usado = 1, fecha_uso = ? WHERE token = ? AND id_usuario = ?"
+	_, err = s.DB.Exec(updateQuery, time.Now(), verificacionData.Code, userID)
+	if err != nil {
+		log.Println("Error updating token status:", err)
+		return false, err
+	}
+
+	return true, nil
+}
+
+func (s *EmailService) ResendVerificationEmail(toEmail string) error {
+	if toEmail == "" {
+		return errors.New("email must be provided")
+	}
+
+	userID, error := s.getIdFromEmail(toEmail)
+	if error != nil {
+		return error
+	}
+
+	query := "SELECT num_renvios, token FROM Tokens_Verificacion WHERE id_usuario = ? ORDER BY fecha_creacion DESC LIMIT 1"
+
+	var reenviado int
+	var token string
+	err := s.DB.QueryRow(query, userID).Scan(&reenviado, &token)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			reenviado = 0
+		} else {
+			log.Println("Error fetching resend count:", err)
+			return err
+		}
+	}
+
+	log.Printf("Resend count for %s: %d", toEmail, reenviado)
+
+	if reenviado >= 3 {
+		return errors.New("maximum number of resends reached")
+	}
+
+	verificationCode := s.generateVerificationCode()
+
+	if err := s.sendEmail(toEmail, verificationCode); err != nil {
+		return err
+	}
+
+	expirationDate := time.Now().Add(2 * time.Minute)
+
+	query = "UPDATE Tokens_Verificacion SET num_renvios = num_renvios + 1, token = ?, fecha_modificacion = ?, fecha_expiracion = ? WHERE id_usuario = ? AND token = ? ORDER BY fecha_creacion DESC LIMIT 1"
+	_, err = s.DB.Exec(query, verificationCode, time.Now(), expirationDate, userID, token)
+	if err != nil {
+		log.Println("Error updating resend count:", err)
+		return err
+	}
+	log.Printf("Resend count updated for %s", toEmail)
+
+	return nil
+}
+
+func (s *EmailService) saveVerificationCode(toEmail string, code string, motivo string) error {
+	expirationDate := time.Now().Add(48 * time.Hour)
+
+	query := "INSERT INTO Tokens_Verificacion (token, id_usuario, fecha_expiracion, fecha_creacion, usado, motivo) VALUES (?, (SELECT id_usuario FROM Usuarios WHERE usuario = ?), ?, ?, ?, ?)"
+	_, err := s.DB.Exec(query, code, toEmail, expirationDate, time.Now(), 0, motivo)
+	if err != nil {
+		log.Println("Error inserting verification code in database:", err)
+		return err
+	}
+	return nil
+}
+
+func (s *EmailService) getIdFromEmail(toEmail string) (int, error) {
+	var userID int
+	query := "SELECT id_usuario FROM Usuarios WHERE usuario = ?"
+	err := s.DB.QueryRow(query, toEmail).Scan(&userID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return 0, errors.New("user not found")
+		}
+		log.Println("Error fetching user ID:", err)
+		return 0, err
+	}
+	return userID, nil
+}	
+
+func (s *EmailService) sendEmail(toEmail string, verificationCode string) error {
 	smtpUser := os.Getenv("SMTP_USER")
 	smtpPass := os.Getenv("SMTP_PASS")
 	apiPort := os.Getenv("API_PORT")
 	if apiPort == "" {
 		apiPort = "3000"
 	}
-
-	verificationCode := s.GenerateVerificationCode()
-
-	if toEmail == "" || smtpUser == "" || smtpPass == "" {
-		log.Println("EMAIL_TO, SMTP_USER or SMTP_PASS environment variables are not set. Skipping email sending.")
-		return errors.New("missing email configuration")
-	}
-
-	if err := s.saveVerificationCode(toEmail, verificationCode); err != nil {
-		return err
-	}
-
+	
 	message := mail.NewMsg()
 	if err := message.From(smtpUser); err != nil {
 		log.Fatalf("failed to set From address: %s", err)
@@ -75,51 +186,14 @@ func (s *EmailService) SendVerificationEmail(toEmail string) error {
 	}
 
 	log.Printf("Verification email sent to %s", toEmail)
-
 	return nil
 }
 
-func (s *EmailService) GenerateVerificationCode() string {
-    n, err := rand.Int(rand.Reader, big.NewInt(1000000)) // 0..999999
-    if err != nil {
-        log.Printf("failed to generate verification code: %v", err)
-        return "000000"
-    }
-    return fmt.Sprintf("%06d", n.Int64())
-}
-
-func (s *EmailService) saveVerificationCode(toEmail string, code string) error {
-	query := "UPDATE Usuarios SET codigo_verificacion = ? WHERE usuario = ?"
-	_, err := s.DB.Exec(query, code, toEmail)
+func (s *EmailService) generateVerificationCode() string {
+	n, err := rand.Int(rand.Reader, big.NewInt(1000000)) // 0..999999
 	if err != nil {
-		log.Println("Error updating verification code in database:", err)
-		return err
+		log.Printf("failed to generate verification code: %v", err)
+		return "000000"
 	}
-	return nil
-}
-
-func (s *EmailService) VerifyEmail(verificacionData models.EmailVerification) (bool, error) {
-	if verificacionData.Code == "" || verificacionData.Email == "" {
-		return false, errors.New("verification code and email must be provided")
-	}
-
-	var userID int
-	query := "SELECT id_usuario FROM Usuarios WHERE codigo_verificacion = ? && usuario = ?"
-	err := s.DB.QueryRow(query, verificacionData.Code, verificacionData.Email).Scan(&userID)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return false, errors.New("invalid verification code or email")
-		}
-		log.Println("Error fetching user by verification code:", err)
-		return false, err
-	}
-
-	updateQuery := "UPDATE Usuarios SET verificado = 1, codigo_verificacion = NULL WHERE id_usuario = ?"
-	_, err = s.DB.Exec(updateQuery, userID)
-	if err != nil {
-		log.Println("Error updating user verification status:", err)
-		return false, err
-	}
-
-	return true, nil
+	return fmt.Sprintf("%06d", n.Int64())
 }

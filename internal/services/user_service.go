@@ -84,7 +84,7 @@ func (service *UserService) CreateUser(user *models.User) (*models.UserResponse,
 
 	if service.EmailService != nil {
         go func(email string) {
-            if err := service.EmailService.SendVerificationEmail(email); err != nil {
+            if err := service.EmailService.SendVerificationEmail(email, "Registro de usuario"); err != nil {
                 log.Printf("failed to send verification email to %s: %v", email, err)
             }
         }(user.Email)

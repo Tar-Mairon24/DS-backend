@@ -35,3 +35,20 @@ func (controller *VerificarEmailController) VerificarEmail(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Email verified successfully"})
 }
+
+func (controller *VerificarEmailController) ReenviarCodigoVerificacion(c *gin.Context) {
+	resendData := models.EmailResendRequest{}
+
+	if err := c.ShouldBindJSON(&resendData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	err := controller.EmailService.ResendVerificationEmail(resendData.Email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to resend verification code", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Verification code resent successfully"})
+}
