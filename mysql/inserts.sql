@@ -1,3 +1,5 @@
+insert into Usuarios (id_usuario, usuario, nombre_usuario, password_usuario, role) values(1, 'admin@prueba.com', 'Admin', '$2a$10$m1oBIP7R3UnHmEjyEs9JbusawC3UCad4F2PYKqiE8qmP3mgbZeIx2', 'admin');
+
 INSERT INTO `inmosoftDB`.`Tipo_Propiedad` values (1, 'casa');
 INSERT INTO `inmosoftDB`.`Tipo_Propiedad` values (2, 'bodega');
 INSERT INTO `inmosoftDB`.`Tipo_Propiedad` values (3, 'local');

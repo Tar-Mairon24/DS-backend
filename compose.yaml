@@ -14,18 +14,18 @@ services:
           timeout: 5s
           retries: 5
     ports:
-      - "${DB_PORT}:3306"
+      - "${DB_OUTSIDE_PORT}:3306"
     volumes:
       - ./mysql:/docker-entrypoint-initdb.d
     networks:
-      - my_network
+      - network
 
-  backend:
+  app:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: ds_backend
-    restart: always
+    restart: unless-stopped
     environment:
       DB_HOST: ds_database
       DB_NAME: ${DB_NAME}
@@ -33,13 +33,17 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       DB_PORT: ${DB_PORT}
       JWT_SECRET: ${JWT_SECRET}
+      API_PORT: ${API_PORT}
+      SERVER_TIMEZONE: ${SERVER_TIMEZONE}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
     ports:
       - "${API_PORT}:8080"
     networks:
-      - my_network
+      - network
     depends_on:
       - mysql
 
 networks:
-  my_network:
+  network:
     driver: bridge

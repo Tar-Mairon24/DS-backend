@@ -1,13 +1,19 @@
 module backend
 
-go 1.23
+go 1.24.0
 
 require (
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/golang-jwt/jwt/v5 v5.3.0
 )
 
-require github.com/kr/text v0.2.0 // indirect
+require (
+	github.com/joho/godotenv v1.5.1 // indirect
+	github.com/kr/text v0.2.0 // indirect
+	github.com/sendgrid/rest v2.6.9+incompatible // indirect
+	github.com/sendgrid/sendgrid-go v3.16.1+incompatible // indirect
+	github.com/wneessen/go-mail v0.7.2 // indirect
+)
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
@@ -36,7 +42,7 @@ require (
 	golang.org/x/crypto v0.27.0
 	golang.org/x/net v0.29.0 // indirect
 	golang.org/x/sys v0.25.0 // indirect
-	golang.org/x/text v0.18.0 // indirect
+	golang.org/x/text v0.29.0 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

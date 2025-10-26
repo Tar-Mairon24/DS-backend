@@ -13,12 +13,14 @@ import (
 
 type UserService struct {
 	DB *sql.DB
+	EmailService *EmailService
 }
 
 // Constructor for the UserService
-func NewUserService(db *sql.DB) *UserService {
+func NewUserService(db *sql.DB, emailService *EmailService) *UserService {
 	return &UserService{
 		DB: db,
+		EmailService: emailService,
 	}
 }
 
@@ -69,31 +71,61 @@ func (service *UserService) Login(email string, password string) (*models.UserRe
 }
 
 func (service *UserService) CreateUser(user *models.User) (*models.UserResponse, error) {
-	if user == nil {
-		return nil, errors.New("user is nil")
+	if user.Email == "" || user.Nombre == "" || user.Role == "" {
+		log.Println("Email, nombre and role must be provided")
+		return nil, errors.New("email, nombre and role must be provided")
 	}
-	if user.Email == "" || user.Password == "" || user.Nombre == "" || user.Role == "" {
-		return nil, errors.New("missing required user fields")
-	}
-
-	if len(user.Password) < 8 {
-		return nil, errors.New("password must be at least 8 characters long")
-	}
-	if len(user.Password) > 72 {
-		return nil, errors.New("password must be at most 72 characters long")
-	}
-
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-	if err != nil {
-		log.Println("Error hashing password:", err)
-		return nil, err
-	}
-
-	query := "INSERT INTO Usuarios (usuario, nombre_usuario, password_usuario, role, creado_en, actualizado_en) VALUES (?, ?, ?, ?, ?, ?)"
-	_, err = service.DB.Exec(query, user.Email, user.Nombre, hashedPassword, user.Role, time.Now(), time.Now())
+	query := "INSERT INTO Usuarios (usuario, nombre_usuario, role, creado_en, actualizado_en) VALUES (?, ?, ?, ?, ?)"
+	_, err := service.DB.Exec(query, user.Email, user.Nombre, user.Role, time.Now(), time.Now())
 	if err != nil {
 		log.Println("Error creating user:", err)
 		return nil, err
 	}
+
+	if service.EmailService != nil {
+        go func(email string) {
+            if err := service.EmailService.SendVerificationEmail(email, "Registro de usuario"); err != nil {
+                log.Printf("failed to send verification email to %s: %v", email, err)
+            }
+        }(user.Email)
+    }
+	
+
 	return user.ToResponse(), nil
+}
+
+func (service *UserService) SetPasswordUser(id int, password string) (*models.UserResponse, error) {
+	if len(password) < 8 {
+		return nil, errors.New("password must be at least 8 characters long")
+	}
+	if len(password) > 72 {
+		return nil, errors.New("password must be at most 72 characters long")
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		log.Println("Error hashing password:", err)
+		return nil, err
+	}
+	query := "UPDATE Usuarios SET password_usuario = ? WHERE id_usuario = ?"
+	_, err = service.DB.Exec(query, hashedPassword, id)
+	if err != nil {
+		log.Println("Error updating user password:", err)
+		return nil, err
+	}
+
+	log.Printf("Password updated for user ID %d", id)
+	log.Println("Password is:", password)
+
+	user, err := service.GetUserByID(id)
+	if err != nil {
+		log.Println("Error fetching user after password update:", err)
+		return nil, errors.New("failed to fetch user")
+	}
+	if user == nil {
+		log.Println("User not found after password update")
+		return nil, errors.New("user not found")
+	}
+
+	return user, nil
 }

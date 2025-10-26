@@ -13,7 +13,8 @@ func SetupRouter() *gin.Engine {
 	router := gin.Default()
 
 	// Initialize services
-	userService := services.NewUserService(database.DB)
+	emailService := services.NewEmailService(database.DB)
+	userService := services.NewUserService(database.DB, emailService)
 	propiedadService := services.NewPropiedadService(database.DB)
 	propietarioService := services.NewPropietarioService(database.DB)
 	tipoPropiedadService := services.NewTipoPropiedadService(database.DB)
@@ -37,6 +38,7 @@ func SetupRouter() *gin.Engine {
 	imagenesProspectoController := controllers.NewImagenesProspectoController(imagenesProspectoService)
 	contratosController := controllers.NewContratosController(contratoService)
 	documentosAnexosController := controllers.NewDocumentosAnexosController(documentosAnexosService)
+	verificarEmailController := controllers.NewVerificarEmailController(emailService)
 
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
@@ -67,6 +69,7 @@ func SetupRouter() *gin.Engine {
 	contratosRoutes(v1, contratosController)
 	imagenesRoutes(v1, imagenesController)
 	documentosAnexosRoutes(v1, documentosAnexosController)
+	verificarEmailRoutes(v1, verificarEmailController)
 
 	return router
 }
@@ -81,8 +84,14 @@ func userRoutes(group *gin.RouterGroup, userController *controllers.UserControll
 	users.Use(services.JwtAuthorization())
 	users.Use(services.ValidateUserAdmin())
 	{
-		users.GET(":id", userController.GetUser)
+		users.GET("/:id", userController.GetUser)
+		users.POST("/set-password/:id", userController.SetPasswordUser)
 	}
+}
+
+func verificarEmailRoutes(group *gin.RouterGroup, verificarEmailController *controllers.VerificarEmailController) {
+	group.GET("/verificar-email", verificarEmailController.VerificarEmail)
+	group.POST("/reenviar-codigo-verificacion", verificarEmailController.ReenviarCodigoVerificacion)
 }
 
 func propiedadRoutes(group *gin.RouterGroup, propiedadController *controllers.Propiedad_Controller) {

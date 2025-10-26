@@ -124,7 +124,6 @@ func ValidateUserAdmin() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var token string
 		if cookieToken, err := c.Cookie("JWTtoken"); err == nil && cookieToken != "" {
-			log.Println("Cookie token found:", cookieToken)
 			token = cookieToken
 		} else {
 			log.Println("No token found in cookies")

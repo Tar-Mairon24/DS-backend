@@ -52,10 +52,35 @@ CREATE TABLE IF NOT EXISTS `inmosoftDB`.`Usuarios` (
   `role` ENUM('admin', 'agente') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
   `creado_en` DATETIME NULL,
   `actualizado_en` DATETIME NULL,
+  `borrado_en` DATETIME NULL,
+  `verificado` TINYINT NULL DEFAULT 0,
   PRIMARY KEY (`id_usuario`),
   UNIQUE INDEX `usuario_UNIQUE` (`usuario` ASC) VISIBLE)
 ENGINE = InnoDB;
 
+-- -----------------------------------------------------
+-- Table `inmosoftDB`.`Tokens_Verificacion`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `inmosoftDB`.`Tokens_Verificacion` (
+  `id_token` INT NOT NULL AUTO_INCREMENT,
+  `token` VARCHAR(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NOT NULL,
+  `id_usuario` INT NOT NULL,
+  `fecha_expiracion` DATETIME NULL,
+  `fecha_creacion` DATETIME NULL,
+  `fecha_modificacion` DATETIME NULL,
+  `fecha_uso` DATETIME NULL,
+  `usado` TINYINT NULL DEFAULT 0,
+  `num_renvios` INT NULL DEFAULT 0,
+  `motivo` VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
+  PRIMARY KEY (`id_token`),
+  UNIQUE INDEX `token_UNIQUE` (`token` ASC) VISIBLE,
+  INDEX `fk_Tokens_Verificacion_Usuarios1_idx` (`id_usuario` ASC) VISIBLE,
+  CONSTRAINT `fk_Tokens_Verificacion_Usuarios1`
+    FOREIGN KEY (`id_usuario`)
+    REFERENCES `inmosoftDB`.`Usuarios` (`id_usuario`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
 
 -- -----------------------------------------------------
 -- Table `inmosoftDB`.`Propiedades`
