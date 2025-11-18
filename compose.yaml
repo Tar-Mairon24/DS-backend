@@ -18,7 +18,7 @@ services:
     volumes:
       - ./mysql:/docker-entrypoint-initdb.d
     networks:
-      - network
+      - ds_network
 
   app:
     build:
@@ -40,10 +40,10 @@ services:
     ports:
       - "${API_PORT}:8080"
     networks:
-      - network
+      - ds_network
     depends_on:
       - mysql
 
 networks:
-  network:
-    driver: bridge
+  ds_network:
+    external: true
