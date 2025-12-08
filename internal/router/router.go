@@ -14,7 +14,7 @@ func SetupRouter() *gin.Engine {
 
 	// Initialize services
 	emailService := services.NewEmailService(database.DB)
-	userService := services.NewUserService(database.DB, emailService)
+	userService := services.NewUserService(database.DB)
 	propiedadService := services.NewPropiedadService(database.DB)
 	propietarioService := services.NewPropietarioService(database.DB)
 	tipoPropiedadService := services.NewTipoPropiedadService(database.DB)
@@ -79,19 +79,26 @@ func authRoutes(group *gin.RouterGroup, userController *controllers.UserControll
 }
 
 func userRoutes(group *gin.RouterGroup, userController *controllers.UserController) {
-	group.POST("/users/create", userController.CreateUser)
 	users := group.Group("/users")
 	users.Use(services.JwtAuthorization())
 	users.Use(services.ValidateUserAdmin())
 	{
+		users.GET("/all", userController.GetAllUsers)
 		users.GET("/:id", userController.GetUser)
 		users.POST("/set-password/:id", userController.SetPasswordUser)
+		users.POST("/create", userController.CreateUser)
+		users.DELETE("/:id", userController.DeleteUser)
 	}
 }
 
 func verificarEmailRoutes(group *gin.RouterGroup, verificarEmailController *controllers.VerificarEmailController) {
-	group.GET("/verificar-email", verificarEmailController.VerificarEmail)
-	group.POST("/reenviar-codigo-verificacion", verificarEmailController.ReenviarCodigoVerificacion)
+	mfa := group.Group("/email")
+	mfa.Use(services.JwtAuthorization())
+	{
+		mfa.POST("/enviar-email-verificacion", verificarEmailController.EnviarEmailVerificacion)
+		mfa.POST("/verificar-email", verificarEmailController.VerificarEmail)
+		mfa.POST("/reenviar-codigo-verificacion", verificarEmailController.ReenviarCodigoVerificacion)
+	}
 }
 
 func propiedadRoutes(group *gin.RouterGroup, propiedadController *controllers.Propiedad_Controller) {

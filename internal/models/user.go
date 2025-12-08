@@ -6,7 +6,7 @@ type User struct {
 	ID       int    `json:"id"`
 	Email    string `json:"email"`
 	Nombre   string `json:"nombre"`
-	Password string `json:""`
+	Password string `json:"password"`
 	Role     string `json:"role"`
 	CreadoEn string `json:"creado_en"`
 	ActualizadoEn string `json:"actualizado_en"`
@@ -16,6 +16,7 @@ type UserResponse struct {
 	ID     int    `json:"id"`
 	Email  string `json:"email"`
 	Nombre string `json:"nombre"`
+	Role   string `json:"role"`
 }
 
 type UserLoginData struct {
@@ -35,6 +36,11 @@ type EmailVerification struct {
 	Code  string `json:"code"`
 }
 
+type EmailRequest struct {
+	Email 	string `json:"email"`
+	Reason 	string `json:"reason,omitempty"`
+}
+
 type EmailResendRequest struct {
 	Email string `json:"email"`
 }
@@ -44,5 +50,6 @@ func (u *User) ToResponse() *UserResponse {
 		ID:     u.ID,
 		Email:  u.Email,
 		Nombre: u.Nombre,
+		Role:  	u.Role,
 	}
 }
