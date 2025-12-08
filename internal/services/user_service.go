@@ -13,21 +13,47 @@ import (
 
 type UserService struct {
 	DB *sql.DB
-	EmailService *EmailService
 }
 
 // Constructor for the UserService
-func NewUserService(db *sql.DB, emailService *EmailService) *UserService {
+func NewUserService(db *sql.DB) *UserService {
 	return &UserService{
 		DB: db,
-		EmailService: emailService,
 	}
+}
+
+func (service *UserService) GetAllUsers() ([]*models.UserResponse, error) {
+	query := "SELECT id_usuario, usuario, nombre_usuario, role FROM Usuarios WHERE borrado_en IS NULL"
+	rows, err := service.DB.Query(query)
+	if err != nil {
+		log.Println("Error fetching users:", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []*models.UserResponse
+	for rows.Next() {
+		user := &models.User{}
+		err := rows.Scan(&user.ID, &user.Email, &user.Nombre, &user.Role)
+		if err != nil {
+			log.Println("Error scanning user row:", err)
+			return nil, err
+		}
+		users = append(users, user.ToResponse())
+	}
+
+	if err = rows.Err(); err != nil {
+		log.Println("Row iteration error:", err)
+		return nil, err
+	}
+
+	return users, nil
 }
 
 // Function to retrieve a user by ID
 func (service *UserService) GetUserByID(id int) (*models.UserResponse, error) {
 	user := &models.User{}
-	query := "SELECT id_usuario, usuario, nombre_usuario, role FROM Usuarios WHERE id_usuario = ?"
+	query := "SELECT id_usuario, usuario, nombre_usuario, role FROM Usuarios WHERE id_usuario = ? AND borrado_en IS NULL"
 	err := service.DB.QueryRow(query, id).Scan(&user.ID, &user.Email, &user.Nombre, &user.Role)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -47,7 +73,7 @@ func (service *UserService) Login(email string, password string) (*models.UserRe
 	}
 
 	user := &models.User{}
-	query := "select id_usuario, usuario, nombre_usuario, password_usuario, role from Usuarios where usuario = ?;"
+	query := "select id_usuario, usuario, nombre_usuario, password_usuario, role from Usuarios where usuario = ? AND borrado_en IS NULL;"
 	err := service.DB.QueryRow(query, email).Scan(&user.ID, &user.Email, &user.Nombre, &user.Password, &user.Role)
 
 	if err != nil {
@@ -71,27 +97,35 @@ func (service *UserService) Login(email string, password string) (*models.UserRe
 }
 
 func (service *UserService) CreateUser(user *models.User) (*models.UserResponse, error) {
-	if user.Email == "" || user.Nombre == "" || user.Role == "" {
+	if user.Email == "" || user.Nombre == "" || user.Role == "" || user.Password == "" {
 		log.Println("Email, nombre and role must be provided")
-		return nil, errors.New("email, nombre and role must be provided")
+		return nil, errors.New("email, nombre, password and role must be provided")
 	}
-	query := "INSERT INTO Usuarios (usuario, nombre_usuario, role, creado_en, actualizado_en) VALUES (?, ?, ?, ?, ?)"
-	_, err := service.DB.Exec(query, user.Email, user.Nombre, user.Role, time.Now(), time.Now())
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		log.Println("Error hashing password:", err)
+		return nil, err
+	}
+	user.Password = string(hashedPassword)
+
+	query := "INSERT INTO Usuarios (usuario, nombre_usuario, password_usuario, role, creado_en, actualizado_en) VALUES (?, ?, ?, ?, ?, ?)"
+	_, err = service.DB.Exec(query, user.Email, user.Nombre, user.Password, user.Role, time.Now(), time.Now())
 	if err != nil {
 		log.Println("Error creating user:", err)
 		return nil, err
 	}
 
-	if service.EmailService != nil {
-        go func(email string) {
-            if err := service.EmailService.SendVerificationEmail(email, "Registro de usuario"); err != nil {
-                log.Printf("failed to send verification email to %s: %v", email, err)
-            }
-        }(user.Email)
-    }
-	
-
 	return user.ToResponse(), nil
+}
+
+func (service *UserService) DeleteUser(id int) error {
+	query := "UPDATE Usuarios SET borrado_en = ? WHERE id_usuario = ? AND borrado_en IS NULL"
+	_, err := service.DB.Exec(query, time.Now(), id)
+	if err != nil {
+		log.Println("Error deleting user:", err)
+		return err
+	}
+	return nil
 }
 
 func (service *UserService) SetPasswordUser(id int, password string) (*models.UserResponse, error) {
@@ -107,7 +141,7 @@ func (service *UserService) SetPasswordUser(id int, password string) (*models.Us
 		log.Println("Error hashing password:", err)
 		return nil, err
 	}
-	query := "UPDATE Usuarios SET password_usuario = ? WHERE id_usuario = ?"
+	query := "UPDATE Usuarios SET password_usuario = ? WHERE id_usuario = ? AND borrado_en IS NULL"
 	_, err = service.DB.Exec(query, hashedPassword, id)
 	if err != nil {
 		log.Println("Error updating user password:", err)

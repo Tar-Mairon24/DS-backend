@@ -23,6 +23,16 @@ func NewUserController(userService *services.UserService) *UserController {
 	}
 }
 
+func (ctrl *UserController) GetAllUsers(c *gin.Context) {
+	users, err := ctrl.UserService.GetAllUsers()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve users"})
+		return
+	}
+
+	c.JSON(http.StatusOK, users)
+}
+
 // GET /users/:id
 func (ctrl *UserController) GetUser(c *gin.Context) {
 	idParam := c.Param("id")
@@ -93,6 +103,25 @@ func (ctrl *UserController) CreateUser(c *gin.Context){
 	}
 
 	c.JSON(http.StatusCreated, createdUser)
+}
+
+func (ctrl *UserController) DeleteUser(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		log.Println("Error converting user ID:", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	err = ctrl.UserService.DeleteUser(id)
+	if err != nil {
+		log.Println("Error deleting user:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
 }
 
 func (ctrl *UserController) SetPasswordUser(c *gin.Context){

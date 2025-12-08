@@ -50,6 +50,7 @@ func (s *EmailService) VerifyEmail(verificacionData models.EmailVerification) (b
 	err := s.DB.QueryRow(query, verificacionData.Code, verificacionData.Email, time.Now()).Scan(&userID, &usado)
 	if err != nil {
 		if err == sql.ErrNoRows {
+			log.Println("No matching verification code or email found")
 			return false, errors.New("invalid verification code or email")
 		}
 		log.Println("Error fetching user by verification code:", err)
@@ -85,11 +86,25 @@ func (s *EmailService) ResendVerificationEmail(toEmail string) error {
 		return error
 	}
 
-	query := "SELECT num_renvios, token FROM Tokens_Verificacion WHERE id_usuario = ? ORDER BY fecha_creacion DESC LIMIT 1"
+	query := "SELECT usado, motivo FROM Tokens_Verificacion WHERE id_usuario = ?"
+	var usado int
+	var motivo string
+	err := s.DB.QueryRow(query, userID).Scan(&usado, &motivo)
+	if err != nil {
+		log.Println("Error fetching user verification status:", err)
+		return err
+	}
+	if usado == 1 {
+		log.Println("Code already verified for user:", toEmail)
+		s.SendVerificationEmail(toEmail, "Retry")
+		return nil
+	}
+
+	query = "SELECT num_renvios, token FROM Tokens_Verificacion WHERE id_usuario = ? ORDER BY fecha_creacion DESC LIMIT 1"
 
 	var reenviado int
 	var token string
-	err := s.DB.QueryRow(query, userID).Scan(&reenviado, &token)
+	err = s.DB.QueryRow(query, userID).Scan(&reenviado, &token)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			reenviado = 0

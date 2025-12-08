@@ -55,6 +55,7 @@ func JwtAuthorization() gin.HandlerFunc {
 		if cookieToken, err := c.Cookie("JWTtoken"); err == nil && cookieToken != "" {
 			token = cookieToken
 		} else {
+			log.Println("No token found in cookies")
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"error":   "Authorization token not found",
 				"message": "Please provide a valid token by login or refresh your token",
