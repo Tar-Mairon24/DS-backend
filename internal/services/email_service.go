@@ -10,6 +10,7 @@ import (
 	"os"
 	"time"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/wneessen/go-mail"
 
 	"backend/internal/models"
@@ -17,11 +18,13 @@ import (
 
 type EmailService struct {
 	DB *sql.DB
+	sq sq.StatementBuilderType
 }
 
 func NewEmailService(db *sql.DB) *EmailService {
 	return &EmailService{
 		DB: db,
+		sq: sq.StatementBuilder.PlaceholderFormat(sq.Question),
 	}
 }
 
@@ -33,7 +36,7 @@ func (s *EmailService) SendVerificationEmail(toEmail string, motivo string) erro
 	}
 
 	if err := s.sendEmail(toEmail, verificationCode); err != nil {
-		return err	
+		return err
 	}
 
 	return nil
@@ -46,8 +49,17 @@ func (s *EmailService) VerifyEmail(verificacionData models.EmailVerification) (b
 
 	var userID int
 	var usado int
-	query := "SELECT id_usuario, usado FROM Tokens_Verificacion WHERE token = ? AND id_usuario = (SELECT id_usuario FROM Usuarios WHERE usuario = ? ) AND fecha_expiracion > ?"
-	err := s.DB.QueryRow(query, verificacionData.Code, verificacionData.Email, time.Now()).Scan(&userID, &usado)
+	query := s.sq.Select("id_usuario", "usado").
+		From("Tokens_Verificacion").
+		Where(sq.Eq{"token": verificacionData.Code}).
+		Where(sq.Expr("id_usuario = (SELECT id_usuario FROM Usuarios WHERE usuario = ?)", verificacionData.Email)).
+		Where(sq.Gt{"fecha_expiracion": time.Now()})
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return false, err
+	}
+	err = s.DB.QueryRow(sqlStr, args...).Scan(&userID, &usado)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			log.Println("No matching verification code or email found")
@@ -60,14 +72,27 @@ func (s *EmailService) VerifyEmail(verificacionData models.EmailVerification) (b
 		return false, errors.New("verification code has already been used")
 	}
 
-	updateQuery := "UPDATE Usuarios SET verificado = 1 WHERE id_usuario = ?"
-	_, err = s.DB.Exec(updateQuery, userID)
+	updateQuery := s.sq.Update("Usuarios").Set("verificado", 1).Where(sq.Eq{"id_usuario": userID})
+	updateSQL, updateArgs, err := updateQuery.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return false, err
+	}
+	_, err = s.DB.Exec(updateSQL, updateArgs...)
 	if err != nil {
 		log.Println("Error updating user verification status:", err)
 		return false, err
 	}
-	updateQuery = "UPDATE Tokens_Verificacion SET usado = 1, fecha_uso = ? WHERE token = ? AND id_usuario = ?"
-	_, err = s.DB.Exec(updateQuery, time.Now(), verificacionData.Code, userID)
+	updateTokenQuery := s.sq.Update("Tokens_Verificacion").
+		Set("usado", 1).
+		Set("fecha_uso", time.Now()).
+		Where(sq.Eq{"token": verificacionData.Code, "id_usuario": userID})
+	updateTokenSQL, updateTokenArgs, err := updateTokenQuery.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return false, err
+	}
+	_, err = s.DB.Exec(updateTokenSQL, updateTokenArgs...)
 	if err != nil {
 		log.Println("Error updating token status:", err)
 		return false, err
@@ -86,10 +111,15 @@ func (s *EmailService) ResendVerificationEmail(toEmail string) error {
 		return error
 	}
 
-	query := "SELECT usado, motivo FROM Tokens_Verificacion WHERE id_usuario = ?"
+	query := s.sq.Select("usado", "motivo").From("Tokens_Verificacion").Where(sq.Eq{"id_usuario": userID})
 	var usado int
 	var motivo string
-	err := s.DB.QueryRow(query, userID).Scan(&usado, &motivo)
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return err
+	}
+	err = s.DB.QueryRow(sqlStr, args...).Scan(&usado, &motivo)
 	if err != nil {
 		log.Println("Error fetching user verification status:", err)
 		return err
@@ -100,11 +130,20 @@ func (s *EmailService) ResendVerificationEmail(toEmail string) error {
 		return nil
 	}
 
-	query = "SELECT num_renvios, token FROM Tokens_Verificacion WHERE id_usuario = ? ORDER BY fecha_creacion DESC LIMIT 1"
+	query = s.sq.Select("num_renvios", "token").
+		From("Tokens_Verificacion").
+		Where(sq.Eq{"id_usuario": userID}).
+		OrderBy("fecha_creacion DESC").
+		Limit(1)
 
 	var reenviado int
 	var token string
-	err = s.DB.QueryRow(query, userID).Scan(&reenviado, &token)
+	sqlStr, args, err = query.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return err
+	}
+	err = s.DB.QueryRow(sqlStr, args...).Scan(&reenviado, &token)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			reenviado = 0
@@ -128,8 +167,19 @@ func (s *EmailService) ResendVerificationEmail(toEmail string) error {
 
 	expirationDate := time.Now().Add(48 * time.Hour)
 
-	query = "UPDATE Tokens_Verificacion SET num_renvios = num_renvios + 1, token = ?, fecha_modificacion = ?, fecha_expiracion = ? WHERE id_usuario = ? AND token = ? ORDER BY fecha_creacion DESC LIMIT 1"
-	_, err = s.DB.Exec(query, verificationCode, time.Now(), expirationDate, userID, token)
+	updateLatestQuery := s.sq.Update("Tokens_Verificacion").
+		Set("num_renvios", sq.Expr("num_renvios + 1")).
+		Set("token", verificationCode).
+		Set("fecha_modificacion", time.Now()).
+		Set("fecha_expiracion", expirationDate).
+		Where(sq.Eq{"id_usuario": userID, "token": token}).
+		Suffix("ORDER BY fecha_creacion DESC LIMIT 1")
+	updateLatestSQL, updateLatestArgs, err := updateLatestQuery.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return err
+	}
+	_, err = s.DB.Exec(updateLatestSQL, updateLatestArgs...)
 	if err != nil {
 		log.Println("Error updating resend count:", err)
 		return err
@@ -142,8 +192,15 @@ func (s *EmailService) ResendVerificationEmail(toEmail string) error {
 func (s *EmailService) saveVerificationCode(toEmail string, code string, motivo string) error {
 	expirationDate := time.Now().Add(48 * time.Hour)
 
-	query := "INSERT INTO Tokens_Verificacion (token, id_usuario, fecha_expiracion, fecha_creacion, usado, motivo) VALUES (?, (SELECT id_usuario FROM Usuarios WHERE usuario = ?), ?, ?, ?, ?)"
-	_, err := s.DB.Exec(query, code, toEmail, expirationDate, time.Now(), 0, motivo)
+	query := s.sq.Insert("Tokens_Verificacion").
+		Columns("token", "id_usuario", "fecha_expiracion", "fecha_creacion", "usado", "motivo").
+		Values(code, sq.Expr("(SELECT id_usuario FROM Usuarios WHERE usuario = ?)", toEmail), expirationDate, time.Now(), 0, motivo)
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return err
+	}
+	_, err = s.DB.Exec(sqlStr, args...)
 	if err != nil {
 		log.Println("Error inserting verification code in database:", err)
 		return err
@@ -153,8 +210,13 @@ func (s *EmailService) saveVerificationCode(toEmail string, code string, motivo 
 
 func (s *EmailService) getIdFromEmail(toEmail string) (int, error) {
 	var userID int
-	query := "SELECT id_usuario FROM Usuarios WHERE usuario = ?"
-	err := s.DB.QueryRow(query, toEmail).Scan(&userID)
+	query := s.sq.Select("id_usuario").From("Usuarios").Where(sq.Eq{"usuario": toEmail})
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return 0, err
+	}
+	err = s.DB.QueryRow(sqlStr, args...).Scan(&userID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return 0, errors.New("user not found")
@@ -163,7 +225,7 @@ func (s *EmailService) getIdFromEmail(toEmail string) (int, error) {
 		return 0, err
 	}
 	return userID, nil
-}	
+}
 
 func (s *EmailService) sendEmail(toEmail string, verificationCode string) error {
 	smtpUser := os.Getenv("SMTP_USER")
@@ -172,7 +234,7 @@ func (s *EmailService) sendEmail(toEmail string, verificationCode string) error 
 	if apiPort == "" {
 		apiPort = "3000"
 	}
-	
+
 	message := mail.NewMsg()
 	if err := message.From(smtpUser); err != nil {
 		log.Fatalf("failed to set From address: %s", err)

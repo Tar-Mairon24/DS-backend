@@ -5,25 +5,36 @@ import (
 	"backend/internal/models"
 	"database/sql"
 	"log"
+
+	sq "github.com/Masterminds/squirrel"
 )
 
 type DocumentosAnexosService struct {
 	DB *sql.DB
+	sq sq.StatementBuilderType
 }
 
 // Constructor para DocumentosAnexosService
 func NewDocumentosAnexosService(db *sql.DB) *DocumentosAnexosService {
 	return &DocumentosAnexosService{
 		DB: db,
+		sq: sq.StatementBuilder.PlaceholderFormat(sq.Question),
 	}
 }
 
 // Recupera un documento anexo por su ID
 func (service *DocumentosAnexosService) GetDocumentoAnexo(id int) (*models.DocumentoAnexo, error) {
 	var documento models.DocumentoAnexo
-	query := "SELECT id_documento_anexo, ruta_documento, descripcion_documento_anexo, id_propiedad FROM Documentos_Anexos WHERE id_documento_anexo = ?"
-	row := service.DB.QueryRow(query, id)
-	err := row.Scan(&documento.IDDocumentoAnexo, &documento.RutaDocumento, &documento.DescripcionDocumento, &documento.IDPropiedad)
+	query := service.sq.Select("id_documento_anexo", "ruta_documento", "descripcion_documento_anexo", "id_propiedad").
+		From("Documentos_Anexos").
+		Where(sq.Eq{"id_documento_anexo": id})
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return nil, err
+	}
+	row := service.DB.QueryRow(sqlStr, args...)
+	err = row.Scan(&documento.IDDocumentoAnexo, &documento.RutaDocumento, &documento.DescripcionDocumento, &documento.IDPropiedad)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			log.Println("No se encontró el documento anexo")
@@ -38,8 +49,15 @@ func (service *DocumentosAnexosService) GetDocumentoAnexo(id int) (*models.Docum
 // Recupera todos los documentos anexos de una propiedad
 func (service *DocumentosAnexosService) GetDocumentosByPropiedad(idPropiedad int) ([]*models.DocumentoAnexo, error) {
 	var documentos []*models.DocumentoAnexo
-	query := "SELECT id_documento_anexo, ruta_documento, descripcion_documento_anexo, id_propiedad FROM Documentos_Anexos WHERE id_propiedad = ?"
-	rows, err := service.DB.Query(query, idPropiedad)
+	query := service.sq.Select("id_documento_anexo", "ruta_documento", "descripcion_documento_anexo", "id_propiedad").
+		From("Documentos_Anexos").
+		Where(sq.Eq{"id_propiedad": idPropiedad})
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return nil, err
+	}
+	rows, err := service.DB.Query(sqlStr, args...)
 	if err != nil {
 		log.Println("Error recuperando documentos anexos:", err)
 		return nil, err
@@ -73,8 +91,15 @@ func (service *DocumentosAnexosService) InsertDocumentoAnexo(documento *models.D
 	}
 	documento.IDDocumentoAnexo = lastId + 1
 
-	query := "INSERT INTO Documentos_Anexos(id_documento_anexo, ruta_documento, descripcion_documento_anexo, id_propiedad) VALUES(?, ?, ?, ?)"
-	result, err := service.DB.Exec(query, documento.IDDocumentoAnexo, documento.RutaDocumento, documento.DescripcionDocumento, documento.IDPropiedad)
+	query := service.sq.Insert("Documentos_Anexos").
+		Columns("id_documento_anexo", "ruta_documento", "descripcion_documento_anexo", "id_propiedad").
+		Values(documento.IDDocumentoAnexo, documento.RutaDocumento, documento.DescripcionDocumento, documento.IDPropiedad)
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return 0, err
+	}
+	result, err := service.DB.Exec(sqlStr, args...)
 	if err != nil {
 		log.Println("Error insertando documento anexo:", err)
 		return 0, err
@@ -93,8 +118,17 @@ func (service *DocumentosAnexosService) InsertDocumentoAnexo(documento *models.D
 
 // Actualiza un documento anexo existente por su ID
 func (service *DocumentosAnexosService) UpdateDocumentoAnexo(documento *models.DocumentoAnexo, id int) error {
-	query := "UPDATE Documentos_Anexos SET ruta_documento = ?, descripcion_documento_anexo = ?, id_propiedad = ? WHERE id_documento_anexo = ?"
-	result, err := service.DB.Exec(query, documento.RutaDocumento, documento.DescripcionDocumento, documento.IDPropiedad, id)
+	query := service.sq.Update("Documentos_Anexos").
+		Set("ruta_documento", documento.RutaDocumento).
+		Set("descripcion_documento_anexo", documento.DescripcionDocumento).
+		Set("id_propiedad", documento.IDPropiedad).
+		Where(sq.Eq{"id_documento_anexo": id})
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return err
+	}
+	result, err := service.DB.Exec(sqlStr, args...)
 	if err != nil {
 		log.Println("Error actualizando documento anexo:", err)
 		return err
@@ -113,8 +147,13 @@ func (service *DocumentosAnexosService) UpdateDocumentoAnexo(documento *models.D
 
 // Elimina un documento anexo por su ID
 func (service *DocumentosAnexosService) DeleteDocumentoAnexo(id int) error {
-	query := "DELETE FROM Documentos_Anexos WHERE id_documento_anexo = ?"
-	result, err := service.DB.Exec(query, id)
+	query := service.sq.Delete("Documentos_Anexos").Where(sq.Eq{"id_documento_anexo": id})
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return err
+	}
+	result, err := service.DB.Exec(sqlStr, args...)
 	if err != nil {
 		log.Println("Error eliminando documento anexo:", err)
 		return err

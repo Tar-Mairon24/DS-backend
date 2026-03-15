@@ -1,20 +1,24 @@
 package services
 
 import (
-	"backend/internal/models"
 	"backend/internal/database"
+	"backend/internal/models"
 	"database/sql"
 	"log"
+
+	sq "github.com/Masterminds/squirrel"
 )
 
 type TipoPropiedadService struct {
 	DB *sql.DB
+	sq sq.StatementBuilderType
 }
 
 // Constructor for the PropiedadService
 func NewTipoPropiedadService(db *sql.DB) *TipoPropiedadService {
 	return &TipoPropiedadService{
 		DB: db,
+		sq: sq.StatementBuilder.PlaceholderFormat(sq.Question),
 	}
 }
 
@@ -22,8 +26,13 @@ func NewTipoPropiedadService(db *sql.DB) *TipoPropiedadService {
 // Funcion que recupera el tipo de propiedad dependiendo del id_tipo_propiedad que biene en el get/prpopiedad/:id
 func (service *TipoPropiedadService) GetTipoPropiedad(id int) (*models.TipoPropiedad, error) {
 	var tipo models.TipoPropiedad
-	query := "SELECT * FROM Tipo_Propiedad WHERE id_tipo_propiedad = ?"
-	err := service.DB.QueryRow(query, id).Scan(&tipo.IDTipoPropiedad, &tipo.Tipo_Propiedad)
+	query := service.sq.Select("*").From("Tipo_Propiedad").Where(sq.Eq{"id_tipo_propiedad": id})
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return nil, err
+	}
+	err = service.DB.QueryRow(sqlStr, args...).Scan(&tipo.IDTipoPropiedad, &tipo.Tipo_Propiedad)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			log.Println("No rows found")
@@ -45,8 +54,15 @@ func (service *TipoPropiedadService) CreateTipoPropiedad(tipo *models.TipoPropie
 		return 0, err
 	}
 	tipo.IDTipoPropiedad = lastId + 1
-	query := "INSERT INTO Tipo_Propiedad (id_tipo_propiedad, tipo_propiedad) VALUES (?, ?)"
-	result, err := service.DB.Exec(query, tipo.IDTipoPropiedad, tipo.Tipo_Propiedad)
+	query := service.sq.Insert("Tipo_Propiedad").
+		Columns("id_tipo_propiedad", "tipo_propiedad").
+		Values(tipo.IDTipoPropiedad, tipo.Tipo_Propiedad)
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return 0, err
+	}
+	result, err := service.DB.Exec(sqlStr, args...)
 	if err != nil {
 		log.Println("Error inserting tipo:", err)
 		return 0, err

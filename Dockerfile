@@ -19,6 +19,8 @@ RUN apk --no-cache add ca-certificates tzdata
 
 WORKDIR /app
 
+RUN mkdir -p /uploads
+
 RUN adduser -D -s /bin/sh appuser
 
 COPY --from=builder /app/main .

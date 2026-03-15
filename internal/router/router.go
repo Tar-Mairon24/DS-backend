@@ -121,6 +121,8 @@ func propietarioRoutes(group *gin.RouterGroup, propietarioController *controller
 	{
 		propietarios.GET("/:id", propietarioController.GetPropietario)
 		propietarios.POST("/create", propietarioController.CreatePropietario)
+		propietarios.PUT("/update/:id", propietarioController.UpdatePropietario)
+		propietarios.DELETE("/eliminar/:id", propietarioController.DeletePropietario)
 	}
 }
 
@@ -131,6 +133,7 @@ func prospectoRoutes(group *gin.RouterGroup, prospectoController *controllers.Pr
 		prospectos.GET("/:id", prospectoController.GetProspecto)
 		prospectos.POST("/create", prospectoController.InsertProspecto)
 		prospectos.PUT("/update/:id", prospectoController.UpdateProspecto)
+		prospectos.DELETE("/eliminar/:id", prospectoController.DeleteProspecto)
 	}
 }
 
@@ -159,6 +162,7 @@ func imagenesProspectoRoutes(group *gin.RouterGroup, imagenesProspectoController
 		imagenes.GET("/principal/:id", imagenesProspectoController.GetImagenPrincipal)
 		imagenes.GET("/prospecto/:id", imagenesProspectoController.GetImagenesByProspecto)
 		imagenes.POST("/create", imagenesProspectoController.InsertImagen)
+		imagenes.DELETE("/eliminar/:id", imagenesProspectoController.DeleteImagen)
 	}
 }
 func citasRoutes(group *gin.RouterGroup, citasController *controllers.CitasController) {
@@ -193,6 +197,7 @@ func imagenesRoutes(group *gin.RouterGroup, imagenesController *controllers.Imag
 		imagenes.GET("/all/principal/:id", imagenesController.GetImagenPrincipal)
 		imagenes.POST("/create", imagenesController.InsertImagen)
 		imagenes.DELETE("/eliminar/:id", imagenesController.DeleteImagen)
+		imagenes.Static("/upload", "/app/uploads")
 	}
 }
 

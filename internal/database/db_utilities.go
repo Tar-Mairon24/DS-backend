@@ -2,7 +2,8 @@ package database
 
 import (
 	"database/sql"
-	"fmt"
+
+	sq "github.com/Masterminds/squirrel"
 )
 
 type Db_Utilities struct {
@@ -17,8 +18,15 @@ func NewDbUtilities(db *sql.DB) *Db_Utilities {
 
 func (dbu *Db_Utilities) GetLastId(table string, idName string) (int, error) {
 	var lastId sql.NullInt64 // Usamos sql.NullInt64 para manejar NULL
-	query := fmt.Sprintf("SELECT MAX(%s) FROM %s", idName, table)
-	err := dbu.db.QueryRow(query).Scan(&lastId)
+	query := sq.StatementBuilder.
+		PlaceholderFormat(sq.Question).
+		Select("MAX(" + idName + ")").
+		From(table)
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		return 0, err
+	}
+	err = dbu.db.QueryRow(sqlStr, args...).Scan(&lastId)
 	if err != nil {
 		return 0, err
 	}

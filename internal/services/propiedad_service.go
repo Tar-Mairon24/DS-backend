@@ -1,29 +1,43 @@
 package services
 
 import (
-	"backend/internal/database"
-	"backend/internal/models"
 	"database/sql"
 	"log"
 	"strings"
+	"time"
+
+	sq "github.com/Masterminds/squirrel"
+
+	"backend/internal/database"
+	"backend/internal/models"
 )
 
 type PropiedadService struct {
 	DB *sql.DB
+	sq sq.StatementBuilderType
 }
 
 // Constructor for the PropiedadService
 func NewPropiedadService(db *sql.DB) *PropiedadService {
 	return &PropiedadService{
 		DB: db,
+		sq: sq.StatementBuilder.PlaceholderFormat(sq.Question),
 	}
 }
 
 // Funcion que recupera todas las propiedades de la base de datos, solo recupera los campos necesarios para mostrar en el menú, el resto de los campos se recuperan en otra función
 func (service *PropiedadService) GetAllPropiedades() ([]*models.MenuPropiedades, error) {
 	var propiedades []*models.MenuPropiedades
-	query := "SELECT Propiedades.id_propiedad, Propiedades.titulo, Propiedades.precio, Propiedades.num_recamaras, Estado_Propiedades.tipo_transaccion, Estado_Propiedades.estado FROM Propiedades, Estado_Propiedades WHERE Propiedades.id_propiedad = Estado_Propiedades.id_propiedad"
-	rows, err := service.DB.Query(query)
+	query := service.sq.Select("Propiedades.id_propiedad", "Propiedades.titulo", "Propiedades.precio", "Propiedades.num_recamaras", "Estado_Propiedades.tipo_transaccion", "Estado_Propiedades.estado").
+		From("Propiedades").
+		Join("Estado_Propiedades ON Propiedades.id_propiedad = Estado_Propiedades.id_propiedad").
+		Where(sq.Eq{"borrado_en": nil})
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return nil, err
+	}
+	rows, err := service.DB.Query(sqlStr, args...)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			log.Println("No rows found")
@@ -53,14 +67,17 @@ func (service *PropiedadService) GetAllPropiedades() ([]*models.MenuPropiedades,
 
 func (service *PropiedadService) GetAllPropiedadesByPrice() ([]*models.MenuPropiedades, error) {
 	var propiedades []*models.MenuPropiedades
-	query := `
-		SELECT Propiedades.id_propiedad, Propiedades.titulo, Propiedades.precio, Propiedades.num_recamaras, 
-		       Estado_Propiedades.tipo_transaccion, Estado_Propiedades.estado 
-		FROM Propiedades, Estado_Propiedades 
-		WHERE Propiedades.id_propiedad = Estado_Propiedades.id_propiedad
-		ORDER BY Propiedades.precio DESC` // Orden descendente por precio
-
-	rows, err := service.DB.Query(query)
+	query := service.sq.Select("Propiedades.id_propiedad", "Propiedades.titulo", "Propiedades.precio", "Propiedades.num_recamaras", "Estado_Propiedades.tipo_transaccion", "Estado_Propiedades.estado").
+		From("Propiedades").
+		Join("Estado_Propiedades ON Propiedades.id_propiedad = Estado_Propiedades.id_propiedad").
+		Where(sq.Eq{"borrado_en": nil}).
+		OrderBy("Propiedades.precio DESC")
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return nil, err
+	}
+	rows, err := service.DB.Query(sqlStr, args...)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			log.Println("No rows found")
@@ -90,8 +107,17 @@ func (service *PropiedadService) GetAllPropiedadesByPrice() ([]*models.MenuPropi
 
 func (service *PropiedadService) GetAllPropiedadesByBedrooms() ([]*models.MenuPropiedades, error) {
 	var propiedades []*models.MenuPropiedades
-	query := "SELECT Propiedades.id_propiedad, Propiedades.titulo, Propiedades.precio, Propiedades.num_recamaras, Estado_Propiedades.tipo_transaccion, Estado_Propiedades.estado FROM Propiedades, Estado_Propiedades WHERE Propiedades.id_propiedad = Estado_Propiedades.id_propiedad ORDER BY Propiedades.num_recamaras DESC"
-	rows, err := service.DB.Query(query)
+	query := service.sq.Select("Propiedades.id_propiedad", "Propiedades.titulo", "Propiedades.precio", "Propiedades.num_recamaras", "Estado_Propiedades.tipo_transaccion", "Estado_Propiedades.estado").
+		From("Propiedades").
+		Join("Estado_Propiedades ON Propiedades.id_propiedad = Estado_Propiedades.id_propiedad").
+		Where(sq.Eq{"borrado_en": nil}).
+		OrderBy("Propiedades.num_recamaras DESC")
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return nil, err
+	}
+	rows, err := service.DB.Query(sqlStr, args...)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			log.Println("No rows found")
@@ -124,8 +150,13 @@ func (service *PropiedadService) GetAllPropiedadesByBedrooms() ([]*models.MenuPr
 func (service *PropiedadService) GetPropiedad(id int) (*models.Propiedad, error) {
 	var propiedad models.Propiedad
 	var gas, comodidades, extras, utilidades string
-	query := "SELECT * FROM Propiedades WHERE id_propiedad = ?"
-	err := service.DB.QueryRow(query, id).Scan(&propiedad.IDPropiedad, &propiedad.Titulo, &propiedad.FechaAlta,
+	query := service.sq.Select("*").From("Propiedades").Where(sq.Eq{"id_propiedad": id}).Where(sq.Eq{"borrado_en": nil})
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return nil, err
+	}
+	err = service.DB.QueryRow(sqlStr, args...).Scan(&propiedad.IDPropiedad, &propiedad.Titulo, &propiedad.FechaAlta,
 		&propiedad.Direccion, &propiedad.Colonia, &propiedad.Ciudad,
 		&propiedad.Referencia, &propiedad.Precio, &propiedad.MtsConstruccion,
 		&propiedad.MtsTerreno, &propiedad.Habitada, &propiedad.Amueblada,
@@ -159,17 +190,24 @@ func (service *PropiedadService) InsertPropiedad(propiedad *models.Propiedad, es
 	}
 	propiedad.IDPropiedad = lastID + 1
 
-	query := "INSERT INTO Propiedades(id_propiedad, titulo, fecha_alta, direccion, colonia, ciudad, referencia, " +
-		"precio, mts_construccion, mts_terreno, habitada, amueblada, " +
-		"num_plantas, num_recamaras, num_banos, size_cochera, mts_jardin, " +
-		"gas, comodidades, extras, utilidades, observaciones, id_tipo_propiedad, " +
-		"id_propietario, usuario) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
-	result, err := service.DB.Exec(query, propiedad.IDPropiedad, propiedad.Titulo, propiedad.FechaAlta,
-		propiedad.Direccion, propiedad.Colonia, propiedad.Ciudad, propiedad.Referencia,
-		propiedad.Precio, propiedad.MtsConstruccion, propiedad.MtsTerreno, propiedad.Habitada, propiedad.Amueblada,
-		propiedad.NumPlantas, propiedad.NumRecamaras, propiedad.NumBanos, propiedad.SizeCochera, propiedad.MtsJardin,
-		strings.Join(propiedad.Gas, ","), strings.Join(propiedad.Comodidades, ","), strings.Join(propiedad.Extras, ","),
-		strings.Join(propiedad.Utilidades, ","), propiedad.Observaciones, propiedad.IDTipoPropiedad, propiedad.IDPropietario, propiedad.IDUsuario)
+	query := service.sq.Insert("Propiedades").
+		Columns("id_propiedad", "titulo", "fecha_alta", "direccion", "colonia", "ciudad", "referencia",
+			"precio", "mts_construccion", "mts_terreno", "habitada", "amueblada",
+			"num_plantas", "num_recamaras", "num_banos", "size_cochera", "mts_jardin",
+			"gas", "comodidades", "extras", "utilidades", "observaciones", "creado_en", "id_tipo_propiedad",
+			"id_propietario", "usuario").
+		Values(propiedad.IDPropiedad, propiedad.Titulo, propiedad.FechaAlta,
+			propiedad.Direccion, propiedad.Colonia, propiedad.Ciudad, propiedad.Referencia,
+			propiedad.Precio, propiedad.MtsConstruccion, propiedad.MtsTerreno, propiedad.Habitada, propiedad.Amueblada,
+			propiedad.NumPlantas, propiedad.NumRecamaras, propiedad.NumBanos, propiedad.SizeCochera, propiedad.MtsJardin,
+			strings.Join(propiedad.Gas, ","), strings.Join(propiedad.Comodidades, ","), strings.Join(propiedad.Extras, ","),
+			strings.Join(propiedad.Utilidades, ","), propiedad.Observaciones, time.Now(), propiedad.IDTipoPropiedad, propiedad.IDPropietario, propiedad.IDUsuario)
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return 0, 0, err
+	}
+	result, err := service.DB.Exec(sqlStr, args...)
 	if err != nil {
 		log.Println("Error inserting propiedad:", err)
 		return 0, 0, err
@@ -187,8 +225,15 @@ func (service *PropiedadService) InsertPropiedad(propiedad *models.Propiedad, es
 
 	estado.IDPropiedad = propiedad.IDPropiedad
 	estado.IDEstadoPropiedades = lastID + 1
-	query = "INSERT INTO Estado_Propiedades (id_estado_propiedades, tipo_transaccion, estado, fecha_cambio_estado, id_propiedad) VALUES (?, ?, ?, ?, ?)"
-	result, err = service.DB.Exec(query, estado.IDEstadoPropiedades, estado.TipoTransaccion, estado.Estado, estado.FechaTransaccion, estado.IDPropiedad)
+	query2 := service.sq.Insert("Estado_Propiedades").
+		Columns("id_estado_propiedades", "tipo_transaccion", "estado", "fecha_cambio_estado", "id_propiedad").
+		Values(estado.IDEstadoPropiedades, estado.TipoTransaccion, estado.Estado, estado.FechaTransaccion, estado.IDPropiedad)
+	sqlStr2, args2, err := query2.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return 0, 0, err
+	}
+	result, err = service.DB.Exec(sqlStr2, args2...)
 	if err != nil {
 		log.Println("Error inserting estado de la propiedad:", err)
 		return 0, 0, err
@@ -218,17 +263,40 @@ func (service *PropiedadService) UpdatePropiedad(propiedad *models.Propiedad, id
 		log.Println("Invalid propiedad ID:", id)
 		return err
 	}
-	query := "UPDATE Propiedades SET titulo=?, fecha_alta=?, direccion=?, colonia=?, ciudad=?, referencia=?, " +
-		"precio=?, mts_construccion=?, mts_terreno=?, habitada=?, amueblada=?, " +
-		"num_plantas=?, num_recamaras=?, num_banos=?, size_cochera=?, mts_jardin=?, " +
-		"gas=?, comodidades=?, extras=?, utilidades=?, observaciones=?, id_tipo_propiedad=?, " +
-		"id_propietario=?, usuario=? WHERE id_propiedad=?"
-	result, err := service.DB.Exec(query, propiedad.Titulo, propiedad.FechaAlta,
-		propiedad.Direccion, propiedad.Colonia, propiedad.Ciudad, propiedad.Referencia,
-		propiedad.Precio, propiedad.MtsConstruccion, propiedad.MtsTerreno, propiedad.Habitada, propiedad.Amueblada,
-		propiedad.NumPlantas, propiedad.NumRecamaras, propiedad.NumBanos, propiedad.SizeCochera, propiedad.MtsJardin,
-		strings.Join(propiedad.Gas, ","), strings.Join(propiedad.Comodidades, ","), strings.Join(propiedad.Extras, ","),
-		strings.Join(propiedad.Utilidades, ","), propiedad.Observaciones, propiedad.IDTipoPropiedad, propiedad.IDPropietario, propiedad.IDUsuario, id)
+	query := service.sq.Update("Propiedades").
+		Set("titulo", propiedad.Titulo).
+		Set("fecha_alta", propiedad.FechaAlta).
+		Set("direccion", propiedad.Direccion).
+		Set("colonia", propiedad.Colonia).
+		Set("ciudad", propiedad.Ciudad).
+		Set("referencia", propiedad.Referencia).
+		Set("precio", propiedad.Precio).
+		Set("mts_construccion", propiedad.MtsConstruccion).
+		Set("mts_terreno", propiedad.MtsTerreno).
+		Set("habitada", propiedad.Habitada).
+		Set("amueblada", propiedad.Amueblada).
+		Set("num_plantas", propiedad.NumPlantas).
+		Set("num_recamaras", propiedad.NumRecamaras).
+		Set("num_banos", propiedad.NumBanos).
+		Set("size_cochera", propiedad.SizeCochera).
+		Set("mts_jardin", propiedad.MtsJardin).
+		Set("gas", strings.Join(propiedad.Gas, ",")).
+		Set("comodidades", strings.Join(propiedad.Comodidades, ",")).
+		Set("extras", strings.Join(propiedad.Extras, ",")).
+		Set("utilidades", strings.Join(propiedad.Utilidades, ",")).
+		Set("observaciones", propiedad.Observaciones).
+		Set("actualizado_en", time.Now()).
+		Set("id_tipo_propiedad", propiedad.IDTipoPropiedad).
+		Set("id_propietario", propiedad.IDPropietario).
+		Set("usuario", propiedad.IDUsuario).
+		Where(sq.Eq{"id_propiedad": id}).
+		Where(sq.Eq{"borrado_en": nil})
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return err
+	}
+	result, err := service.DB.Exec(sqlStr, args...)
 	if err != nil {
 		log.Println("Error updating propiedad:", err)
 		return err
@@ -259,8 +327,13 @@ func (service *PropiedadService) DeletePropiedad(id int) error {
 		return err
 	}
 
-	query := "DELETE FROM Propiedades WHERE id_propiedad=?"
-	result, err := service.DB.Exec(query, id)
+	query := service.sq.Update("Propiedades").Set("borrado_en", time.Now()).Where(sq.Eq{"id_propiedad": id}).Where(sq.Eq{"borrado_en": nil})
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return err
+	}
+	result, err := service.DB.Exec(sqlStr, args...)
 	if err != nil {
 		log.Println("Error deleting propiedad:", err)
 		return err

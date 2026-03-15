@@ -37,6 +37,9 @@ CREATE TABLE IF NOT EXISTS `inmosoftDB`.`Propietario` (
   `apellido_materno_propietario` VARCHAR(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
   `telefono_propietario` VARCHAR(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
   `correo_propietario` VARCHAR(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
+  `creado_en` DATETIME NULL,
+  `actualizado_en` DATETIME NULL,
+  `borrado_en` DATETIME NULL,
   PRIMARY KEY (`id_propietario`))
 ENGINE = InnoDB;
 
@@ -108,6 +111,9 @@ CREATE TABLE IF NOT EXISTS `inmosoftDB`.`Propiedades` (
   `extras` SET('alberca', 'jardin', 'techada', 'cocineta', 'cuarto_servicio') NULL DEFAULT NULL,
   `utilidades` SET('agua', 'luz', 'internet') NULL DEFAULT NULL,
   `observaciones` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci   NULL,
+  `creado_en` DATETIME NULL,
+  `actualizado_en` DATETIME NULL,
+  `borrado_en` DATETIME NULL,
   `id_tipo_propiedad` INT NOT NULL,
   `id_propietario` INT NOT NULL,
   `id_usuario` INT NOT NULL,
@@ -141,6 +147,9 @@ CREATE TABLE IF NOT EXISTS `inmosoftDB`.`Imagenes` (
   `ruta_imagen` VARCHAR(2048) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
   `descripcion_imagen` VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
   `principal` TINYINT NULL,
+  `creado_en` DATETIME NULL,
+  `actualizado_en` DATETIME NULL,
+  `borrado_en` DATETIME NULL,
   `id_propiedad` INT NOT NULL,
   PRIMARY KEY (`id_imagen`),
   INDEX `fk_Imagenes_Propiedades1_idx` (`id_propiedad` ASC) VISIBLE,
@@ -161,6 +170,9 @@ CREATE TABLE IF NOT EXISTS `inmosoftDB`.`ImagenesProspecto` (
   `descripcion_imagen` VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
   `principal` TINYINT NULL,
   `id_prospecto` INT NOT NULL,
+  `creado_en` DATETIME NULL,
+  `actualizado_en` DATETIME NULL,
+  `borrado_en` DATETIME NULL,
   PRIMARY KEY (`id_imagen`),
   INDEX `fk_Imagenes_Prospectos1_idx` (`id_prospecto` ASC) VISIBLE,
   CONSTRAINT `fk_Imagenes_Prospectos1`
@@ -198,6 +210,9 @@ CREATE TABLE IF NOT EXISTS `inmosoftDB`.`Contratos` (
   `descripcion_contrato` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci   NULL,
   `tipo` VARCHAR(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
   `ruta_pdf` VARCHAR(255)CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
+  `creado_en` DATETIME NULL,
+  `actualizado_en` DATETIME NULL,
+  `borrado_en` DATETIME NULL,
   `id_propiedad` INT NOT NULL,
   PRIMARY KEY (`id_contrato`),
   INDEX `fk_Contratos_Propiedades2_idx` (`id_propiedad` ASC) VISIBLE,
@@ -219,6 +234,9 @@ CREATE TABLE IF NOT EXISTS `inmosoftDB`.`Prospecto` (
   `apellido_materno_prospecto` VARCHAR(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
   `telefono_prospecto` VARCHAR(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
   `correo_prospecto` VARCHAR(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
+  `creado_en` DATETIME NULL,
+  `actualizado_en` DATETIME NULL,
+  `borrado_en` DATETIME NULL,
   PRIMARY KEY (`id_cliente`))
 ENGINE = InnoDB;
 
@@ -234,6 +252,9 @@ CREATE TABLE IF NOT EXISTS `inmosoftDB`.`Citas` (
   `descripcion_cita` VARCHAR(2000) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL,
   `id_usuario` INT NOT NULL,
   `id_cliente` INT NOT NULL,
+  `creado_en` DATETIME NULL,
+  `actualizado_en` DATETIME NULL,
+  `borrado_en` DATETIME NULL,
   PRIMARY KEY (`id_citas`),
   INDEX `fk_Citas_Usuarios1_idx` (`id_usuario` ASC) VISIBLE,
   INDEX `fk_Citas_Prospecto1_idx` (`id_cliente` ASC) VISIBLE,
@@ -259,6 +280,9 @@ CREATE TABLE IF NOT EXISTS `inmosoftDB`.`Documentos_Anexos` (
   `ruta_documento` VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
   `descripcion_documento_anexo` VARCHAR(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NULL,
   `id_propiedad` INT NOT NULL,
+  `creado_en` DATETIME NULL,
+  `actualizado_en` DATETIME NULL,
+  `borrado_en` DATETIME NULL,
   PRIMARY KEY (`id_documento_anexo`),
   INDEX `fk_Documentos_Anexos_Propiedades2_idx` (`id_propiedad` ASC) VISIBLE,
   CONSTRAINT `fk_Documentos_Anexos_Propiedades2`

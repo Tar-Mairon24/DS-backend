@@ -1,29 +1,39 @@
 package services
 
 import (
-	"backend/internal/database"
-	"backend/internal/models"
 	"database/sql"
 	"log"
+
+	sq "github.com/Masterminds/squirrel"
+
+	"backend/internal/database"
+	"backend/internal/models"
 )
 
 type ImagenesProspectoService struct {
 	DB *sql.DB
+	sq sq.StatementBuilderType
 }
 
 // Constructor para ImagenesService
 func NewImagenesProspectoService(db *sql.DB) *ImagenesProspectoService {
 	return &ImagenesProspectoService{
 		DB: db,
+		sq: sq.StatementBuilder.PlaceholderFormat(sq.Question),
 	}
 }
 
 // Recupera una imagen por su ID
 func (service *ImagenesProspectoService) GetImagen(id int) (*models.ImagenProspecto, error) {
 	var imagen models.ImagenProspecto
-	query := "SELECT id_imagen, ruta_imagen, descripcion_imagen, principal, id_prospecto FROM ImagenesProspecto WHERE id_imagen = ?"
-	row := service.DB.QueryRow(query, id)
-	err := row.Scan(&imagen.IDImagen, &imagen.RutaImagen, &imagen.Descripcion, &imagen.Principal, &imagen.IDProspecto)
+	query := service.sq.Select("id_imagen", "ruta_imagen", "descripcion_imagen", "principal", "id_prospecto").From("ImagenesProspecto").Where(sq.Eq{"id_imagen": id})
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return nil, err
+	}
+	row := service.DB.QueryRow(sqlStr, args...)
+	err = row.Scan(&imagen.IDImagen, &imagen.RutaImagen, &imagen.Descripcion, &imagen.Principal, &imagen.IDProspecto)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			log.Println("No se encontró la imagen")
@@ -37,9 +47,14 @@ func (service *ImagenesProspectoService) GetImagen(id int) (*models.ImagenProspe
 
 func (service *ImagenesProspectoService) GetImagenPrincipal(id int) (*models.ImagenProspecto, error) {
 	var imagen models.ImagenProspecto
-	query := "SELECT id_imagen, ruta_imagen, descripcion_imagen, principal, id_prospecto FROM ImagenesProspecto WHERE id_prospecto = ? AND principal = 1"
-	row := service.DB.QueryRow(query, id)
-	err := row.Scan(&imagen.IDImagen, &imagen.RutaImagen, &imagen.Descripcion, &imagen.Principal, &imagen.IDProspecto)
+	query := service.sq.Select("id_imagen", "ruta_imagen", "descripcion_imagen", "principal", "id_prospecto").From("ImagenesProspecto").Where(sq.Eq{"id_prospecto": id, "principal": 1})
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return nil, err
+	}
+	row := service.DB.QueryRow(sqlStr, args...)
+	err = row.Scan(&imagen.IDImagen, &imagen.RutaImagen, &imagen.Descripcion, &imagen.Principal, &imagen.IDProspecto)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			log.Println("No se encontró la imagen")
@@ -54,8 +69,13 @@ func (service *ImagenesProspectoService) GetImagenPrincipal(id int) (*models.Ima
 // Recupera todas las imágenes de una propiedad
 func (service *ImagenesProspectoService) GetImagenesByProspecto(idPropiedad int) ([]*models.ImagenProspecto, error) {
 	var imagenes []*models.ImagenProspecto
-	query := "SELECT id_imagen, ruta_imagen, descripcion_imagen, principal, id_prospecto FROM ImagenesProspecto WHERE id_prospecto = ?"
-	rows, err := service.DB.Query(query, idPropiedad)
+	query := service.sq.Select("id_imagen", "ruta_imagen", "descripcion_imagen", "principal", "id_prospecto").From("ImagenesProspecto").Where(sq.Eq{"id_prospecto": idPropiedad})
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return nil, err
+	}
+	rows, err := service.DB.Query(sqlStr, args...)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			log.Println("No se encontraron imágenes")
@@ -100,8 +120,15 @@ func (service *ImagenesProspectoService) InsertImagen(imagen *models.ImagenProsp
 	}
 	imagen.IDProspecto = lastIdProspecto
 
-	query := "INSERT INTO ImagenesProspecto(id_imagen, ruta_imagen, descripcion_imagen, principal, id_prospecto) VALUES(?,?,?,?,?)"
-	result, err := service.DB.Exec(query, imagen.IDImagen, imagen.RutaImagen, imagen.Descripcion, imagen.Principal, imagen.IDProspecto)
+	query := service.sq.Insert("ImagenesProspecto").
+		Columns("id_imagen", "ruta_imagen", "descripcion_imagen", "principal", "id_prospecto").
+		Values(imagen.IDImagen, imagen.RutaImagen, imagen.Descripcion, imagen.Principal, imagen.IDProspecto)
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return 0, err
+	}
+	result, err := service.DB.Exec(sqlStr, args...)
 	if err != nil {
 		log.Println("Error insertando imagen:", err)
 		return 0, err
@@ -120,8 +147,18 @@ func (service *ImagenesProspectoService) InsertImagen(imagen *models.ImagenProsp
 
 // Actualiza una imagen existente por su ID
 func (service *ImagenesProspectoService) UpdateImagen(imagen *models.ImagenProspecto, id int) error {
-	query := "UPDATE ImagenesProspecto SET ruta_imagen = ?, descripcion_imagen = ?, principal = ?, id_prospecto = ? WHERE id_imagen = ?"
-	result, err := service.DB.Exec(query, imagen.RutaImagen, imagen.Descripcion, imagen.Principal, imagen.IDProspecto, id)
+	query := service.sq.Update("ImagenesProspecto").
+		Set("ruta_imagen", imagen.RutaImagen).
+		Set("descripcion_imagen", imagen.Descripcion).
+		Set("principal", imagen.Principal).
+		Set("id_prospecto", imagen.IDProspecto).
+		Where(sq.Eq{"id_imagen": id})
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return err
+	}
+	result, err := service.DB.Exec(sqlStr, args...)
 	if err != nil {
 		log.Println("Error actualizando imagen:", err)
 		return err
@@ -140,8 +177,13 @@ func (service *ImagenesProspectoService) UpdateImagen(imagen *models.ImagenProsp
 
 // Elimina una imagen por su ID
 func (service *ImagenesProspectoService) DeleteImagen(id int) error {
-	query := "DELETE FROM ImagenesProspecto WHERE id_imagen = ?"
-	result, err := service.DB.Exec(query, id)
+	query := service.sq.Delete("ImagenesProspecto").Where(sq.Eq{"id_imagen": id})
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return err
+	}
+	result, err := service.DB.Exec(sqlStr, args...)
 	if err != nil {
 		log.Println("Error eliminando imagen:", err)
 		return err

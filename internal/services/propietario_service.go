@@ -1,20 +1,26 @@
 package services
 
 import (
-	"backend/internal/models"
-	"backend/internal/database"
 	"database/sql"
 	"log"
+	"time"
+
+	sq "github.com/Masterminds/squirrel"
+
+	"backend/internal/database"
+	"backend/internal/models"
 )
 
 type PropietarioService struct {
 	DB *sql.DB
+	sq sq.StatementBuilderType
 }
 
 // Constructor for the PropiedadService
 func NewPropietarioService(db *sql.DB) *PropietarioService {
 	return &PropietarioService{
 		DB: db,
+		sq: sq.StatementBuilder.PlaceholderFormat(sq.Question),
 	}
 }
 
@@ -22,8 +28,13 @@ func NewPropietarioService(db *sql.DB) *PropietarioService {
 // Funcion que recupera el propietario de la propiedad dependiendo del id_propietario que biene en el get/prpopiedad/:id
 func (service *PropietarioService) GetPropietario(id int) (*models.Propietario, error) {
 	var propietario models.Propietario
-	query := "SELECT * FROM Propietario WHERE id_propietario = ?"
-	err := service.DB.QueryRow(query, id).Scan(&propietario.IDPropietario, &propietario.Nombre, &propietario.ApellidoP, &propietario.ApellidoM, &propietario.Telefono, &propietario.Correo)
+	query := service.sq.Select("*").From("Propietario").Where(sq.Eq{"id_propietario": id}).Where(sq.Eq{"borrado_en": nil})
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return nil, err
+	}
+	err = service.DB.QueryRow(sqlStr, args...).Scan(&propietario.IDPropietario, &propietario.Nombre, &propietario.ApellidoP, &propietario.ApellidoM, &propietario.Telefono, &propietario.Correo)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			log.Println("No rows found")
@@ -45,8 +56,15 @@ func (service *PropietarioService) CreatePropietario(propietario *models.Propiet
 		return 0, err
 	}
 	propietario.IDPropietario = lastId + 1
-	query := "INSERT INTO Propietario (id_propietario, nombre, apellido_p, apellido_m, telefono, correo) VALUES (?, ?, ?, ?, ?)"
-	result, err := service.DB.Exec(query, propietario.IDPropietario, propietario.Nombre, propietario.ApellidoP, propietario.ApellidoM, propietario.Telefono, propietario.Correo)
+	query := service.sq.Insert("Propietario").
+		Columns("id_propietario", "nombre", "apellido_p", "apellido_m", "telefono", "correo", "creado_en").
+		Values(propietario.IDPropietario, propietario.Nombre, propietario.ApellidoP, propietario.ApellidoM, propietario.Telefono, propietario.Correo, time.Now())
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return 0, err
+	}
+	result, err := service.DB.Exec(sqlStr, args...)
 	if err != nil {
 		log.Println("Error inserting propietario:", err)
 		return 0, err
@@ -56,7 +74,7 @@ func (service *PropietarioService) CreatePropietario(propietario *models.Propiet
 		log.Println("Error getting rows affected:", err)
 		return 0, err
 	}
-	if (rows != 0) {
+	if rows != 1 {
 		log.Println("No rows affected")
 		return 0, nil
 	}
@@ -73,12 +91,25 @@ func (service *PropietarioService) UpdatePropietario(propietario *models.Propiet
 		log.Println("Error gettin last Id in Propietario table:", err)
 		return err
 	}
-	if(propietario.IDPropietario > lastId && propietario.IDPropietario < 0) {
+	if propietario.IDPropietario > lastId && propietario.IDPropietario < 0 {
 		log.Println("Propietario ID not found")
 		return nil
 	}
-	query := "UPDATE Propietario SET nombre = ?, apellido_p = ?, apellido_m = ?, telefono = ?, correo = ? WHERE id_propietario = ?"
-	result, err := service.DB.Exec(query, propietario.Nombre, propietario.ApellidoP, propietario.ApellidoM, propietario.Telefono, propietario.Correo, propietario.IDPropietario)
+	query := service.sq.Update("Propietario").
+		Set("nombre", propietario.Nombre).
+		Set("apellido_p", propietario.ApellidoP).
+		Set("apellido_m", propietario.ApellidoM).
+		Set("telefono", propietario.Telefono).
+		Set("correo", propietario.Correo).
+		Set("actualizado_en", time.Now()).
+		Where(sq.Eq{"id_propietario": propietario.IDPropietario}).
+		Where(sq.Eq{"borrado_en": nil})
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return err
+	}
+	result, err := service.DB.Exec(sqlStr, args...)
 	if err != nil {
 		log.Println("Error updating propietario:", err)
 		return err
@@ -88,7 +119,7 @@ func (service *PropietarioService) UpdatePropietario(propietario *models.Propiet
 		log.Println("Error getting rows affected:", err)
 		return err
 	}
-	if (rows != 0) {
+	if rows != 0 {
 		log.Println("No rows affected")
 		return nil
 	}
@@ -104,12 +135,17 @@ func (service *PropietarioService) DeletePropietario(id int) error {
 		log.Println("Error gettin last Id in Propietario table:", err)
 		return err
 	}
-	if(id > lastId && id < 0) {
+	if id > lastId && id < 0 {
 		log.Println("Propietario ID not found")
 		return nil
 	}
-	query := "DELETE FROM Propietario WHERE id_propietario = ?"
-	result, err := service.DB.Exec(query, id)
+	query := service.sq.Update("Propietario").Set("borrado_en", time.Now()).Where(sq.Eq{"id_propietario": id}).Where(sq.Eq{"borrado_en": nil})
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return err
+	}
+	result, err := service.DB.Exec(sqlStr, args...)
 	if err != nil {
 		log.Println("Error deleting propietario:", err)
 		return err

@@ -41,8 +41,13 @@ services:
       - "${API_PORT}:8080"
     networks:
       - ds_network
+    volumes:
+      - property_images:/app/uploads
     depends_on:
       - mysql
+
+volumes:
+  property_images:
 
 networks:
   ds_network:

@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 
+	sq "github.com/Masterminds/squirrel"
 	"golang.org/x/crypto/bcrypt"
 
 	"backend/internal/models"
@@ -13,18 +14,26 @@ import (
 
 type UserService struct {
 	DB *sql.DB
+	sq sq.StatementBuilderType
 }
 
 // Constructor for the UserService
 func NewUserService(db *sql.DB) *UserService {
 	return &UserService{
 		DB: db,
+		sq: sq.StatementBuilder.PlaceholderFormat(sq.Question),
 	}
 }
 
 func (service *UserService) GetAllUsers() ([]*models.UserResponse, error) {
-	query := "SELECT id_usuario, usuario, nombre_usuario, role FROM Usuarios WHERE borrado_en IS NULL"
-	rows, err := service.DB.Query(query)
+	query := service.sq.Select("id_usuario", "usuario", "nombre_usuario", "role").From("Usuarios").Where(sq.Eq{"borrado_en": nil})
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return nil, err
+	}
+
+	rows, err := service.DB.Query(sqlStr, args...)
 	if err != nil {
 		log.Println("Error fetching users:", err)
 		return nil, err
@@ -53,8 +62,13 @@ func (service *UserService) GetAllUsers() ([]*models.UserResponse, error) {
 // Function to retrieve a user by ID
 func (service *UserService) GetUserByID(id int) (*models.UserResponse, error) {
 	user := &models.User{}
-	query := "SELECT id_usuario, usuario, nombre_usuario, role FROM Usuarios WHERE id_usuario = ? AND borrado_en IS NULL"
-	err := service.DB.QueryRow(query, id).Scan(&user.ID, &user.Email, &user.Nombre, &user.Role)
+	query := service.sq.Select("id_usuario", "usuario", "nombre_usuario", "role").From("Usuarios").Where(sq.Eq{"id_usuario": id}).Where(sq.Eq{"borrado_en": nil})
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return nil, err
+	}
+	err = service.DB.QueryRow(sqlStr, args...).Scan(&user.ID, &user.Email, &user.Nombre, &user.Role)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -73,9 +87,14 @@ func (service *UserService) Login(email string, password string) (*models.UserRe
 	}
 
 	user := &models.User{}
-	query := "select id_usuario, usuario, nombre_usuario, password_usuario, role from Usuarios where usuario = ? AND borrado_en IS NULL;"
-	err := service.DB.QueryRow(query, email).Scan(&user.ID, &user.Email, &user.Nombre, &user.Password, &user.Role)
+	query := service.sq.Select("id_usuario", "usuario", "nombre_usuario", "password_usuario", "role").From("Usuarios").Where(sq.Eq{"usuario": email}).Where(sq.Eq{"borrado_en": nil})
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return nil, "", errors.New("failed to build SQL query")
+	}
 
+	err = service.DB.QueryRow(sqlStr, args...).Scan(&user.ID, &user.Email, &user.Nombre, &user.Password, &user.Role)
 	if err != nil {
 		log.Println("Error fetching user:", err)
 		return nil, "", errors.New("no such user found")
@@ -108,8 +127,13 @@ func (service *UserService) CreateUser(user *models.User) (*models.UserResponse,
 	}
 	user.Password = string(hashedPassword)
 
-	query := "INSERT INTO Usuarios (usuario, nombre_usuario, password_usuario, role, creado_en, actualizado_en) VALUES (?, ?, ?, ?, ?, ?)"
-	_, err = service.DB.Exec(query, user.Email, user.Nombre, user.Password, user.Role, time.Now(), time.Now())
+	query := service.sq.Insert("Usuarios").Columns("usuario", "nombre_usuario", "password_usuario", "role", "creado_en", "actualizado_en").Values(user.Email, user.Nombre, user.Password, user.Role, time.Now(), time.Now())
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return nil, err
+	}
+	_, err = service.DB.Exec(sqlStr, args...)
 	if err != nil {
 		log.Println("Error creating user:", err)
 		return nil, err
@@ -119,8 +143,13 @@ func (service *UserService) CreateUser(user *models.User) (*models.UserResponse,
 }
 
 func (service *UserService) DeleteUser(id int) error {
-	query := "UPDATE Usuarios SET borrado_en = ? WHERE id_usuario = ? AND borrado_en IS NULL"
-	_, err := service.DB.Exec(query, time.Now(), id)
+	query := service.sq.Update("Usuarios").Set("borrado_en", time.Now()).Where(sq.Eq{"id_usuario": id}).Where(sq.Eq{"borrado_en": nil})
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return err
+	}
+	_, err = service.DB.Exec(sqlStr, args...)
 	if err != nil {
 		log.Println("Error deleting user:", err)
 		return err
@@ -141,8 +170,13 @@ func (service *UserService) SetPasswordUser(id int, password string) (*models.Us
 		log.Println("Error hashing password:", err)
 		return nil, err
 	}
-	query := "UPDATE Usuarios SET password_usuario = ? WHERE id_usuario = ? AND borrado_en IS NULL"
-	_, err = service.DB.Exec(query, hashedPassword, id)
+	query := service.sq.Update("Usuarios").Set("password_usuario", hashedPassword).Where(sq.Eq{"id_usuario": id}).Where(sq.Eq{"borrado_en": nil})
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		log.Println("Error building SQL query:", err)
+		return nil, err
+	}
+	_, err = service.DB.Exec(sqlStr, args...)
 	if err != nil {
 		log.Println("Error updating user password:", err)
 		return nil, err
