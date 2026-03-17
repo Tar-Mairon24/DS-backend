@@ -7,8 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 
-	"inmo-backend/internal/domain/models"
-	"inmo-backend/internal/domain/ports"
+	"ds-backend/internal/domain/models"
+	"ds-backend/internal/domain/ports"
 )
 
 type PropertyHandler struct {

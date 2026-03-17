@@ -5,16 +5,8 @@ compose.yml
 .golangci.yml
 
 .git
+.env
 
 .gitignore
 
-coverage.out
-coverage.html
-
-scripts/
-
 Readme.md
-
-test/
-*_test.go
-**/*_test.go

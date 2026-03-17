@@ -3,9 +3,9 @@ package api
 import (
 	"github.com/gin-gonic/gin"
 
-	"inmo-backend/internal/domain/ports"
-	"inmo-backend/internal/interface/api/handler"
-	"inmo-backend/middleware"
+	"ds-backend/internal/domain/ports"
+	"ds-backend/internal/interface/api/handler"
+	"ds-backend/middleware"
 )
 
 func setupAuthRoutes(rg *gin.RouterGroup, authHandler *handler.AuthHandler) {
@@ -39,6 +39,15 @@ func setupPropertyRoutes(rg *gin.RouterGroup, propertyHandler *handler.PropertyH
 		properties.POST("", propertyHandler.CreateProperty)       // POST /api/v1/properties
 		properties.PUT("/:id", propertyHandler.UpdateProperty)    // PUT /api/v1/properties/:id
 		properties.DELETE("/:id", propertyHandler.DeleteProperty) // DELETE /api/v1/properties/:id
+	}
+}
+
+func setupEmailRoutes(rg *gin.RouterGroup, emailHandler *handler.EmailHandler) {
+	email := rg.Group("/email")
+	{
+		email.POST("/send-verification", emailHandler.SendVerificationEmail) // POST /api/v1/email/send-verification
+		email.POST("/verify", emailHandler.VerifyEmail) // POST /api/v1/email/verify
+		email.POST("/resend-verification", emailHandler.ResendVerificationCode) // POST /api/v1/email/resend-verification
 	}
 }
 

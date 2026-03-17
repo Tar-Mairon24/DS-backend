@@ -3,34 +3,40 @@ package models
 import "time"
 
 type User struct {
-	ID	     	uint       `gorm:"primaryKey" json:"id"`
-	Username 	string     `gorm:"unique;not null" json:"username"`
-	Email       string     `gorm:"unique;not null" json:"email"`
-	Password 	string     `gorm:"not null" json:"password"`
-	CreatedAt 	time.Time  `gorm:"autoCreateTime" json:"created_at"`
-	UpdatedAt 	time.Time  `gorm:"autoUpdateTime" json:"updated_at"`
-	DeletedAt   *time.Time `gorm:"index" json:"-"`
-	Properties  []Property `gorm:"many2many:user_properties" json:"properties,omitempty"`
-	RefreshTokens []RefreshToken `gorm:"foreignKey:UserID" json:"-"` // Exclude from JSON responses
+    ID	     	uint       `json:"id"`
+    Username 	string     `json:"username"`
+    Email       string     `json:"email"`
+    Password 	string     `json:"password"`
+    Role        string     `json:"role"`
+    Verified    bool       `json:"verified"`
+    CreatedAt 	time.Time  `json:"created_at"`
+    UpdatedAt 	time.Time  `json:"updated_at"`
+    DeletedAt   *time.Time `json:"-"` // Exclude from JSON responses
+    Properties  []Property `json:"properties,omitempty"`
+    RefreshTokens []RefreshToken `json:"-"` // Exclude from JSON responses
 }
 
 type UserResponse struct {
-	ID        uint   `json:"id"`
-	Username  string `json:"username"`
-	Email     string `json:"email"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+    ID        uint   `json:"id"`
+    Username  string `json:"username"`
+    Email     string `json:"email"`
+    Role      string `json:"role"`
+    Verified  bool   `json:"verified"`
+    CreatedAt time.Time `json:"created_at"`
+    UpdatedAt time.Time `json:"updated_at"`
 }
 
 func (user *User) ToUserResponse() *UserResponse {
-	if user == nil {
-		return nil
-	}
-	return &UserResponse{
-		ID:        user.ID,
-		Username:  user.Username,
-		Email:     user.Email,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-	}
+    if user == nil {
+        return nil
+    }
+    return &UserResponse{
+        ID:        user.ID,
+        Username:  user.Username,
+        Email:     user.Email,
+        Role:      user.Role,
+        Verified:  user.Verified,
+        CreatedAt: user.CreatedAt,
+        UpdatedAt: user.UpdatedAt,
+    }
 }

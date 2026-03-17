@@ -9,39 +9,39 @@ import (
 
 // Property represents a real estate property in the system
 type Property struct {
-    ID              uint               `gorm:"primaryKey" json:"id"`
-    Title           string             `gorm:"not null;size:255" json:"title"`
-    ListingDate     *time.Time         `gorm:"autoCreateTime" json:"listing_date"`
-    Address         string             `gorm:"not null;size:500" json:"address"`
-    Neighborhood    string             `gorm:"size:255" json:"neighborhood"`
-    City            string             `gorm:"not null;size:255" json:"city"`
-	Zone			string             `gorm:"size:255" json:"zone"`
-    Reference       string             `gorm:"size:500" json:"reference"`
-    Price           float64            `gorm:"not null" json:"price"`
-    ConstructionM2  int                `gorm:"default:0" json:"construction_m2"`
-    LandM2          int                `gorm:"default:0" json:"land_m2"`
-    IsOccupied      bool               `gorm:"default:false" json:"is_occupied"`
-    IsFurnished     bool               `gorm:"default:false" json:"is_furnished"`
-    Floors          int                `gorm:"default:1" json:"floors"`
-    Bedrooms        int                `gorm:"default:0" json:"bedrooms"`
-    Bathrooms       int                `gorm:"default:0" json:"bathrooms"`
-    GarageSize      int                `gorm:"default:0" json:"garage_size"` // Number of cars
-    GardenM2        int                `gorm:"default:0" json:"garden_m2"`
-    GasTypes        StringArray        `gorm:"type:json" json:"gas_types"`
-    Amenities       StringArray        `gorm:"type:json" json:"amenities"`
-    Extras          StringArray        `gorm:"type:json" json:"extras"`
-    Utilities       StringArray        `gorm:"type:json" json:"utilities"`
-    Notes           string             `gorm:"type:text" json:"notes"`
-    OwnerID         uint               `gorm:"not null" json:"owner_id"`
-    UserID          uint               `gorm:"not null" json:"user_id"`
-	PropertyType    PropertyType       `gorm:"not null" json:"property_type"`
-    TransactionType TransactionType    `gorm:"not null" json:"transaction_type"`
-    Status          PropertyStatus     `gorm:"default:'available'" json:"status"`
-    CreatedAt       time.Time          `gorm:"autoCreateTime" json:"created_at"`
-    UpdatedAt       time.Time          `gorm:"autoUpdateTime" json:"updated_at"`
-    DeletedAt       *time.Time         `gorm:"index" json:"-"`
-	Owner           *User              `gorm:"foreignKey:OwnerID" json:"owner,omitempty"`
-    Users           []User             `gorm:"many2many:user_properties" json:"users,omitempty"`
+    ID              uint               `json:"id"`
+    Title           string             `json:"title"`
+    ListingDate     *time.Time         `json:"listing_date"`
+    Address         string             `json:"address"`
+    Neighborhood    string             `json:"neighborhood"`
+    City            string             `json:"city"`
+	Zone			string             `json:"zone"`
+    Reference       string             `json:"reference"`
+    Price           float64            `json:"price"`
+    ConstructionM2  int                `json:"construction_m2"`
+    LandM2          int                `json:"land_m2"`
+    IsOccupied      bool               `json:"is_occupied"`
+    IsFurnished     bool               `json:"is_furnished"`
+    Floors          int                `json:"floors"`
+    Bedrooms        int                `json:"bedrooms"`
+    Bathrooms       int                `json:"bathrooms"`
+    GarageSize      int                `json:"garage_size"` // Number of cars
+    GardenM2        int                `json:"garden_m2"`
+    GasTypes        StringArray        `json:"gas_types"`
+    Amenities       StringArray        `json:"amenities"`
+    Extras          StringArray        `json:"extras"`
+    Utilities       StringArray        `json:"utilities"`
+    Notes           string             `json:"notes"`
+    OwnerID         uint               `json:"owner_id"`
+    UserID          uint               `json:"user_id"`
+	PropertyType    PropertyType       `json:"property_type"`
+    TransactionType TransactionType    `json:"transaction_type"`
+    Status          PropertyStatus     `json:"status"`
+    CreatedAt       time.Time          `json:"created_at"`
+    UpdatedAt       time.Time          `json:"updated_at"`
+    DeletedAt       *time.Time         `json:"-"`
+	Owner           *User              `json:"owner,omitempty"`
+    Users           []User             `json:"users,omitempty"`
 }
 
 // PropertyResponse represents the public view of a property

@@ -33,11 +33,11 @@ type LogoutData struct {
 
 // RefreshToken represents a refresh token used for obtaining new JWT tokens.
 type RefreshToken struct {
-	ID        string    `gorm:"primaryKey" json:"id"`
-	Token     string    `gorm:"unique;not null" json:"token"`
-	UserID    uint      `gorm:"index;not null" json:"user_id"`
-	ExpiresAt int64     `gorm:"not null" json:"expires_at"`
-	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
+	ID        string    `json:"id"`
+	Token     string    `json:"token"`
+	UserID    uint      `json:"user_id"`
+	ExpiresAt int64     `json:"expires_at"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 // RefreshTokenData represents the data required to refresh a JWT token.

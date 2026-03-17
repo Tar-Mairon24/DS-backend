@@ -5,36 +5,39 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"inmo-backend/internal/domain/models"
-	"inmo-backend/internal/domain/ports"
-	"inmo-backend/internal/infrastructure/db"
-	"inmo-backend/internal/infrastructure/repository"
-	"inmo-backend/internal/infrastructure/service"
-	"inmo-backend/internal/interface/api/handler"
-	"inmo-backend/internal/usecase"
-	"inmo-backend/middleware"
+	"ds-backend/internal/domain/models"
+	"ds-backend/internal/domain/ports"
+	"ds-backend/internal/infrastructure/db"
+	"ds-backend/internal/infrastructure/repository"
+	"ds-backend/internal/infrastructure/service"
+	"ds-backend/internal/interface/api/handler"
+	"ds-backend/internal/usecase"
+	"ds-backend/middleware"
 )
 
 type Container struct {
-	SqlDB      			*sql.DB
+	SqlDB *sql.DB
 
-	userRepo   			ports.UserRepository
-	propertyRepo    	ports.PropertyRepository
-	tokenRepo			ports.TokenRepository
+	userRepo     ports.UserRepository
+	propertyRepo ports.PropertyRepository
+	tokenRepo    ports.TokenRepository
+	emailRepo    ports.EmailRepository
 
-	userUsecase 		ports.UserUseCase
-	propertyUsecase  	ports.PropertyUseCase
-	authUsecase 		ports.AuthUseCase
+	userUsecase     ports.UserUseCase
+	propertyUsecase ports.PropertyUseCase
+	authUsecase     ports.AuthUseCase
 
-	jwtService 			ports.JWTService
-	
-	userHandler 		*handler.UserHandler
-	propertyHandler 	*handler.PropertyHandler
-	healthHandler 		*handler.HealthHandler
-	authHandler 		*handler.AuthHandler
+	jwtService ports.JWTService
+	emailService ports.EmailService
 
-	hashing   			middleware.HashingInterface
-	authMiddleware 		middleware.AuthMiddlewareInterface
+	userHandler     *handler.UserHandler
+	propertyHandler *handler.PropertyHandler
+	healthHandler   *handler.HealthHandler
+	authHandler     *handler.AuthHandler
+	emailHandler   	*handler.EmailHandler
+
+	hashing        middleware.HashingInterface
+	authMiddleware middleware.AuthMiddlewareInterface
 }
 
 func NewContainer() *Container {
@@ -43,7 +46,7 @@ func NewContainer() *Container {
 	container := &Container{}
 
 	db.Init()
-	container.SqlDB = db.GetSqlDB()
+	container.SqlDB = db.GetDB()
 
 	if container.SqlDB == nil {
 		logrus.Fatal("Failed to initialize database connection")
@@ -57,9 +60,11 @@ func NewContainer() *Container {
 	container.userRepo = repository.NewUserRepository(container.SqlDB)
 	container.propertyRepo = repository.NewPropertyRepository(container.SqlDB)
 	container.tokenRepo = repository.NewTokenRepository(container.SqlDB)
+	container.emailRepo = repository.NewEmailRepository(container.SqlDB)
 
 	// services
 	container.jwtService = service.NewJWTService(container.userRepo)
+	container.emailService = service.NewEmailService(container.emailRepo)
 
 	// usecases
 	container.userUsecase = usecase.NewUserUseCase(container.userRepo, container.hashing)
@@ -70,6 +75,7 @@ func NewContainer() *Container {
 	container.userHandler = handler.NewUserHandler(container.userUsecase)
 	container.propertyHandler = handler.NewPropertyHandler(container.propertyUsecase)
 	container.authHandler = handler.NewAuthHandler(container.jwtService, container.authUsecase)
+	container.emailHandler = handler.NewEmailHandler(container.emailService)
 	container.healthHandler = handler.NewHealthHandler()
 
 	err := container.seedUser()
@@ -82,39 +88,43 @@ func NewContainer() *Container {
 }
 
 type Handlers struct {
-	PropertyHandler 	*handler.PropertyHandler
-	UserHandler   		*handler.UserHandler
-	HealthHandler 		*handler.HealthHandler
-	AuthHandler 		*handler.AuthHandler
+	PropertyHandler *handler.PropertyHandler
+	UserHandler     *handler.UserHandler
+	HealthHandler   *handler.HealthHandler
+	AuthHandler     *handler.AuthHandler
+	EmailHandler    *handler.EmailHandler
 }
 
 func (c *Container) GetHandlers() *Handlers {
 	return &Handlers{
 		PropertyHandler: c.propertyHandler,
-		UserHandler:  c.userHandler,
-		HealthHandler: c.healthHandler,
-		AuthHandler: c.authHandler,
+		UserHandler:     c.userHandler,
+		HealthHandler:   c.healthHandler,
+		AuthHandler:     c.authHandler,
+		EmailHandler:    c.emailHandler,
 	}
 }
 
 type Services struct {
-	JwtService 			ports.JWTService
+	JwtService ports.JWTService
+	EmailService ports.EmailService
 }
 
-func (c *Container) GetServices() Services{
+func (c *Container) GetServices() Services {
 	return Services{
 		JwtService: c.jwtService,
+		EmailService: c.emailService,
 	}
 }
 
 type Middleware struct {
-	Hashing   			middleware.HashingInterface
-	AuthMiddleware 		middleware.AuthMiddlewareInterface
+	Hashing        middleware.HashingInterface
+	AuthMiddleware middleware.AuthMiddlewareInterface
 }
 
 func (c *Container) GetMiddleware() Middleware {
 	return Middleware{
-		Hashing: c.hashing,
+		Hashing:        c.hashing,
 		AuthMiddleware: c.authMiddleware,
 	}
 }

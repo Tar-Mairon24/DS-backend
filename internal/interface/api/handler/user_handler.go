@@ -7,26 +7,23 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 
-	"inmo-backend/internal/domain/models"
-	"inmo-backend/internal/domain/ports"
+	"ds-backend/internal/domain/models"
+	"ds-backend/internal/domain/ports"
 )
 
 type UserHandler struct {
 	userUsecase ports.UserUseCase
 }
 
-// NewUserHandler creates a new UserHandler instance
 func NewUserHandler(userUsecase ports.UserUseCase) *UserHandler {
 	return &UserHandler{
 		userUsecase: userUsecase,
 	}
 }
 
-// GetUsers handles GET /api/v1/users
 func (h *UserHandler) GetUsers(c *gin.Context) {
 	logrus.Info("GetUsers endpoint called")
 
-	// Use the actual usecase to get users from database
 	users, err := h.userUsecase.GetAllUsers()
 	if err != nil {
 		logrus.WithError(err).Error("Failed to get users")
@@ -53,12 +50,10 @@ func (h *UserHandler) GetUsers(c *gin.Context) {
 	})
 }
 
-// GetUserByID handles GET /api/v1/users/:id
 func (h *UserHandler) GetUserByID(c *gin.Context) {
 	userIDStr := c.Param("id")
 	logrus.Infof("GetUserByID endpoint called with ID: %s", userIDStr)
 
-	// Convert string ID to uint
 	userID, err := strconv.ParseUint(userIDStr, 10, 32)
 	if err != nil {
 		logrus.WithError(err).Error("Invalid user ID format")
@@ -69,7 +64,6 @@ func (h *UserHandler) GetUserByID(c *gin.Context) {
 		return
 	}
 
-	// Use the actual usecase to get user from database
 	user, err := h.userUsecase.GetUserByID(uint(userID))
 	if err != nil {
 		logrus.WithError(err).Error("Failed to get user")
@@ -144,11 +138,9 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 	userIDStr := c.Param("id")
 	logrus.Infof("DeleteUser endpoint called with ID: %s", userIDStr)
 
-	// Convert string ID to uint
 	userID, err := strconv.ParseUint(userIDStr, 10, 32)
 	if err != nil {
 		logrus.WithError(err).Error("Invalid user ID format")
-		logrus.Info("🔍 DEBUG: Returning 400 (Bad Request)")  // ← Debug
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   "Invalid user ID",
 			"message": "User ID must be a valid number",
@@ -158,7 +150,6 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 
 	if err := h.userUsecase.DeleteUser(uint(userID)); err != nil {
 		logrus.WithError(err).Error("Failed to delete user")
-		logrus.Info("🔍 DEBUG: Returning 500 (Internal Server Error)")  // ← Debug
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "Failed to delete user",
 			"message": err.Error(),

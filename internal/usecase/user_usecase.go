@@ -5,9 +5,9 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"inmo-backend/internal/domain/models"
-	"inmo-backend/internal/domain/ports"
-	"inmo-backend/middleware"
+	"ds-backend/internal/domain/models"
+	"ds-backend/internal/domain/ports"
+	"ds-backend/middleware"
 )
 
 type UserUseCase struct {
@@ -15,7 +15,7 @@ type UserUseCase struct {
 	hashing     middleware.HashingInterface
 }
 
-func NewUserUseCase(repo ports.UserRepository, hashing middleware.HashingInterface) *UserUseCase {
+func NewUserUseCase(repo ports.UserRepository, hashing middleware.HashingInterface) ports.UserUseCase {
 	return &UserUseCase{
 		repo:      repo,
 		hashing:   hashing,

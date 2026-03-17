@@ -7,8 +7,8 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 
-	"inmo-backend/cmd/di"
-	"inmo-backend/internal/interface/api"
+	"ds-backend/cmd/di"
+	"ds-backend/internal/interface/api"
 )
 
 func main() {

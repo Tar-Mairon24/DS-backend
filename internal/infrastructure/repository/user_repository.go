@@ -9,8 +9,8 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/sirupsen/logrus"
 
-	"inmo-backend/internal/domain/models"
-	"inmo-backend/internal/domain/ports"
+	"ds-backend/internal/domain/models"
+	"ds-backend/internal/domain/ports"
 )
 
 type UserRepository struct {
@@ -89,20 +89,20 @@ func (r *UserRepository) Create(user *models.User) (*models.UserResponse, error)
 
 	sql, args, err := query.ToSql()
 	if err != nil {
-        logrus.WithError(err).Error("Failed to build SQL query to create user")
+		logrus.WithError(err).Error("Failed to build SQL query to create user")
 		return nil, err
 	}
 
 	ctx := context.Background()
 	result, err := r.db.ExecContext(ctx, sql, args...)
 	if err != nil {
-        logrus.WithError(err).Error("Failed to execute query to create user")
+		logrus.WithError(err).Error("Failed to execute query to create user")
 		return nil, err
 	}
 
 	id, err := result.LastInsertId()
 	if err != nil {
-        logrus.WithError(err).Error("Failed to retrieve last insert ID")
+		logrus.WithError(err).Error("Failed to retrieve last insert ID")
 		return nil, err
 	}
 
@@ -110,7 +110,7 @@ func (r *UserRepository) Create(user *models.User) (*models.UserResponse, error)
 		return nil, errors.New("invalid ID: integer overflow")
 	}
 	user.ID = uint(id)
-    logrus.Infof("User created successfully with ID: %d", user.ID)
+	logrus.Infof("User created successfully with ID: %d", user.ID)
 
 	return user.ToUserResponse(), nil
 }
@@ -139,10 +139,10 @@ func (r *UserRepository) GetAll() ([]models.UserResponse, error) {
 		return nil, err
 	}
 	defer func() {
-        if err := rows.Close(); err != nil {
-            logrus.WithError(err).Error("Failed to close database rows")
-        }
-    }()
+		if err := rows.Close(); err != nil {
+			logrus.WithError(err).Error("Failed to close database rows")
+		}
+	}()
 
 	var users []models.UserResponse
 	for rows.Next() {
@@ -167,7 +167,7 @@ func (r *UserRepository) GetByID(id uint) (*models.UserResponse, error) {
 		Where(squirrel.And{
 			squirrel.Eq{"id": id},
 			squirrel.Expr("deleted_at IS NULL"),
-	})
+		})
 
 	sqlStr, args, err := query.ToSql()
 	if err != nil {

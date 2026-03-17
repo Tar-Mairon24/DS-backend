@@ -9,9 +9,9 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/sirupsen/logrus"
 
-	"inmo-backend/internal/domain/models"
-	"inmo-backend/internal/domain/ports"
-	"inmo-backend/internal/infrastructure/db"
+	"ds-backend/internal/domain/models"
+	"ds-backend/internal/domain/ports"
+	"ds-backend/internal/infrastructure/db"
 )
 
 type TokenRepository struct {
@@ -71,7 +71,7 @@ func (r *TokenRepository) DeleteToken(tokenID string) error {
 	return nil
 }
 
-func (r *TokenRepository) GetTokenIDByUserID(userID uint) (string, error)  {
+func (r *TokenRepository) GetTokenIDByUserID(userID uint) (string, error) {
 	query := r.qb.Select("id").
 		From("refresh_tokens").
 		Where(squirrel.Eq{"user_id": userID})

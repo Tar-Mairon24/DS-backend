@@ -9,8 +9,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/sirupsen/logrus"
 
-	"inmo-backend/internal/domain/models"
-	"inmo-backend/internal/domain/ports"
+	"ds-backend/internal/domain/models"
+	"ds-backend/internal/domain/ports"
 )
 
 type JWTService struct {
@@ -19,7 +19,7 @@ type JWTService struct {
 	userRepo   ports.UserRepository
 }
 
-func NewJWTService(userRepo ports.UserRepository) *JWTService {
+func NewJWTService(userRepo ports.UserRepository) ports.JWTService {
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
 		logrus.Fatal("JWT_SECRET environment variable is not set")
@@ -97,8 +97,8 @@ func (j *JWTService) RefreshToken(tokenString string) (string, error) {
 	claims, err := j.ValidateToken(tokenString)
 	if err != nil {
 		parsedToken, parseErr := jwt.ParseWithClaims(tokenString, &models.JWTClaims{}, func(token *jwt.Token) (any, error) {
-            return j.secret, nil
-        }, jwt.WithoutClaimsValidation())
+			return j.secret, nil
+		}, jwt.WithoutClaimsValidation())
 
 		if parseErr != nil {
 			logrus.WithError(parseErr).Error("Failed to parse token for refresh")

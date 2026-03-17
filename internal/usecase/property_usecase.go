@@ -5,15 +5,15 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"inmo-backend/internal/domain/models"
-	"inmo-backend/internal/domain/ports"
+	"ds-backend/internal/domain/models"
+	"ds-backend/internal/domain/ports"
 )
 
 type PropertyUseCase struct {
 	propertyRepo ports.PropertyRepository
 }
 
-func NewPropertyUseCase(propertyRepo ports.PropertyRepository) *PropertyUseCase {
+func NewPropertyUseCase(propertyRepo ports.PropertyRepository) ports.PropertyUseCase {
 	return &PropertyUseCase{
 		propertyRepo: propertyRepo,
 	}
