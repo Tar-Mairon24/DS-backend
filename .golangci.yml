@@ -1,0 +1,46 @@
+version: "2"
+
+linters:
+  enable:
+    # Essential linters (must-have)
+    - govet          # Go vet examiner
+    - errcheck       # Check for unchecked errors
+    - staticcheck    # Advanced static analysis
+    - unused         # Find unused code
+    - ineffassign    # Detect ineffectual assignments
+    
+    # Performance & best practices
+    - gocritic       # Comprehensive Go source code linter
+    - prealloc       # Find slice declarations with non-zero initial length
+    - unconvert      # Remove unnecessary type conversions
+    
+    # Maintainability
+    - gocyclo        # Cyclomatic complexity
+    - dupl           # Code clone detection
+    - goconst        # Find repeated strings that could be constants
+
+    # Security & Safety
+    - gosec          # Security issues scanner
+    - bodyclose      # Check HTTP response body is closed
+    - noctx          # Find sending http request without context.Context
+    
+    # Performance
+    - nolintlint     # Reports ill-formed or insufficient nolint directives
+
+        # Style & Consistency
+    - whitespace     # Detect leading/trailing whitespace
+    #- revive         # Fast, configurable, extensible replacement for golint
+    - misspell       # Finds commonly misspelled English words
+
+formatters:
+  settings:
+    golines:
+      # Shorten single-line comments.
+      # Default: false
+      shorten-comments: true
+      # Default: true
+      reformat-tags: false
+
+run:
+  tests: false 
+  timeout: 5m

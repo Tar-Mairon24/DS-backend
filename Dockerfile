@@ -13,13 +13,11 @@ COPY . .
 RUN go build -o main cmd/main.go 
 
 
-FROM alpine:latest
+FROM alpine:3.23.3
 
 RUN apk --no-cache add ca-certificates tzdata
 
 WORKDIR /app
-
-RUN mkdir -p /uploads
 
 RUN adduser -D -s /bin/sh appuser
 
@@ -32,3 +30,4 @@ USER appuser
 EXPOSE 8080
 
 CMD ["./main"]
+

@@ -1,37 +1,51 @@
 package main
 
 import (
-	"log"
 	"os"
 	"time"
 
 	"github.com/joho/godotenv"
+	"github.com/sirupsen/logrus"
 
-	"backend/internal/database"
-	"backend/internal/router"
+	"inmo-backend/cmd/di"
+	"inmo-backend/internal/interface/api"
 )
 
 func main() {
 	if err := godotenv.Load(); err != nil {
-		log.Print("No .env file found, using environment variables or defaults")
+		logrus.Warn("No .env file found, using environment variables or defaults")
 	}
+
+	logrus.SetFormatter(&logrus.TextFormatter{
+		ForceColors:            true,
+		FullTimestamp:          true,
+		TimestampFormat:        "2006-01-02 15:04:05",
+		DisableLevelTruncation: true,
+	})
+	logrus.SetLevel(logrus.DebugLevel)
+	logrus.SetOutput(os.Stdout)
 
 	timezone := os.Getenv("SERVER_TIMEZONE")
 	if timezone == "" {
 		timezone = "UTC"
-		log.Print("SERVER_TIMEZONE not set, defaulting to UTC")
+		logrus.Warn("SERVER_TIMEZONE not set, defaulting to UTC")
 	}
 	loc, err := time.LoadLocation(timezone)
-	log.Print("Setting server timezone to ", timezone)
+	logrus.Infof("Setting server timezone to %s", timezone)
 	if err != nil {
-		log.Print("Failed to load timezone ", timezone, ", defaulting to UTC")
+		logrus.WithError(err).Warnf("Failed to load timezone %s, defaulting to UTC", timezone)
 		loc = time.UTC
 	}
 	time.Local = loc
 
-	database.InitDB()
+	container := di.NewContainer()
 
-	ginRouter := router.SetupRouter()
+	r := api.SetupRouter(container.GetHandlers(), container.GetServices(), container.GetMiddleware())
 
-	ginRouter.Run(":8080")
+	port := os.Getenv("SERVER_PORT")
+
+	logrus.Infof("Starting server on port %s", port)
+	if err := r.Run(":" + port); err != nil {
+		logrus.WithError(err).Fatal("Failed to start server")
+	}
 }
