@@ -53,7 +53,7 @@ func (r *UserRepository) ConsultPassword(email string) (string, error) {
 }
 
 func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
-	query := r.qb.Select("id", "username", "email", "password", "created_at", "updated_at").
+	query := r.qb.Select("id", "username", "email", "password", "role", "created_at", "updated_at").
 		From("users").
 		Where(squirrel.Eq{"email": email}).
 		Where(squirrel.Expr("deleted_at IS NULL")) // Ensure deleted_at is NULL
@@ -67,7 +67,7 @@ func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
 	var User models.User
 	ctx := context.Background()
 	err = r.db.QueryRowContext(ctx, sqlStr, args...).Scan(
-		&User.ID, &User.Username, &User.Email, &User.Password, &User.CreatedAt, &User.UpdatedAt,
+		&User.ID, &User.Username, &User.Email, &User.Password, &User.Role, &User.CreatedAt, &User.UpdatedAt,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -84,8 +84,8 @@ func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
 
 func (r *UserRepository) Create(user *models.User) (*models.UserResponse, error) {
 	query := r.qb.Insert("users").
-		Columns("username", "email", "password", "created_at", "updated_at").
-		Values(user.Username, user.Email, user.Password, time.Now(), time.Now())
+		Columns("username", "email", "password", "role", "created_at", "updated_at").
+		Values(user.Username, user.Email, user.Password, user.Role, time.Now(), time.Now())
 
 	sql, args, err := query.ToSql()
 	if err != nil {
@@ -121,7 +121,7 @@ func (r *UserRepository) GetAll() ([]models.UserResponse, error) {
 		logrus.Error("Database connection is nil")
 		return nil, errors.New("database connection is not initialized")
 	}
-	query := r.qb.Select("id", "username", "email", "created_at", "updated_at").
+	query := r.qb.Select("id", "username", "email", "role", "created_at", "updated_at").
 		From("users").
 		Where(squirrel.Expr("deleted_at IS NULL")).
 		OrderBy("created_at DESC")
@@ -147,7 +147,7 @@ func (r *UserRepository) GetAll() ([]models.UserResponse, error) {
 	var users []models.UserResponse
 	for rows.Next() {
 		var user models.UserResponse
-		if err := rows.Scan(&user.ID, &user.Username, &user.Email, &user.CreatedAt, &user.UpdatedAt); err != nil {
+		if err := rows.Scan(&user.ID, &user.Username, &user.Email, &user.Role, &user.CreatedAt, &user.UpdatedAt); err != nil {
 			logrus.WithError(err).Error("Failed to scan user row")
 			return nil, err
 		}
@@ -162,7 +162,7 @@ func (r *UserRepository) GetAll() ([]models.UserResponse, error) {
 }
 
 func (r *UserRepository) GetByID(id uint) (*models.UserResponse, error) {
-	query := r.qb.Select("id", "username", "email", "created_at", "updated_at").
+	query := r.qb.Select("id", "username", "email", "role", "created_at", "updated_at").
 		From("users").
 		Where(squirrel.And{
 			squirrel.Eq{"id": id},
@@ -178,7 +178,7 @@ func (r *UserRepository) GetByID(id uint) (*models.UserResponse, error) {
 	var user models.UserResponse
 	ctx := context.Background()
 	err = r.db.QueryRowContext(ctx, sqlStr, args...).Scan(
-		&user.ID, &user.Username, &user.Email,
+		&user.ID, &user.Username, &user.Email, &user.Role,
 		&user.CreatedAt, &user.UpdatedAt,
 	)
 	if err != nil {
@@ -198,6 +198,7 @@ func (r *UserRepository) Update(user *models.User) (*models.UserResponse, error)
 	query := r.qb.Update("users").
 		Set("username", user.Username).
 		Set("email", user.Email).
+		Set("role", user.Role).
 		Set("updated_at", time.Now()).
 		Where(squirrel.Eq{"id": user.ID}).
 		Where(squirrel.Expr("deleted_at IS NULL"))

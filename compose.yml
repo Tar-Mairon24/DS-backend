@@ -60,6 +60,8 @@ services:
       MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
       - "${DB_PORT}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
     networks:
       - ds_network
     healthcheck:
@@ -68,6 +70,9 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
+
+volumes:
+  mysql_data:
 
 networks:
   ds_network:

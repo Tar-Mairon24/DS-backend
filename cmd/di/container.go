@@ -5,7 +5,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"ds-backend/internal/domain/models"
 	"ds-backend/internal/domain/ports"
 	"ds-backend/internal/infrastructure/db"
 	"ds-backend/internal/infrastructure/repository"
@@ -78,11 +77,6 @@ func NewContainer() *Container {
 	container.emailHandler = handler.NewEmailHandler(container.emailService)
 	container.healthHandler = handler.NewHealthHandler()
 
-	err := container.seedUser()
-	if err != nil {
-		logrus.WithError(err).Fatal("Failed to seed initial user")
-	}
-
 	logrus.Info("DI container initialized successfully")
 	return container
 }
@@ -127,31 +121,4 @@ func (c *Container) GetMiddleware() Middleware {
 		Hashing:        c.hashing,
 		AuthMiddleware: c.authMiddleware,
 	}
-}
-
-func (c *Container) seedUser() error {
-	users, err := c.userRepo.GetAll()
-	if err != nil {
-		return err
-	}
-	if len(users) == 0 {
-		password, err := c.hashing.HashPassword("12345678")
-		if err != nil {
-			return err
-		}
-		user := models.User{
-			Username: "tarmairon",
-			Email:    "tarmairon@prueba.com",
-			Password: password,
-		}
-		_, err = c.userRepo.Create(&user)
-		if err != nil {
-			logrus.WithError(err).Error("Failed to seed initial user")
-			return err
-		}
-		logrus.Info("Seeded initial user successfully")
-	}
-	logrus.Info("Users already exist, skipping seeding")
-
-	return nil
 }
