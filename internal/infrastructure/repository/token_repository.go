@@ -26,7 +26,7 @@ func NewTokenRepository(db *sql.DB) ports.TokenRepository {
 	}
 }
 
-func (r *TokenRepository) SaveToken(token *models.RefreshToken) error {
+func (r *TokenRepository) SaveToken(ctx context.Context, token *models.RefreshToken) error {
 	query := r.qb.Insert("refresh_tokens").
 		Columns("id", "user_id", "token", "expires_at", "created_at").
 		Values(token.ID, token.UserID, token.Token, token.ExpiresAt, time.Now())
@@ -36,7 +36,6 @@ func (r *TokenRepository) SaveToken(token *models.RefreshToken) error {
 		return err
 	}
 
-	ctx := context.Background()
 	_, err = r.db.ExecContext(ctx, sql, args...)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to save refresh token")
@@ -47,7 +46,7 @@ func (r *TokenRepository) SaveToken(token *models.RefreshToken) error {
 	return nil
 }
 
-func (r *TokenRepository) DeleteToken(tokenID string) error {
+func (r *TokenRepository) DeleteToken(ctx context.Context, tokenID string) error {
 	query := r.qb.Delete("refresh_tokens").
 		Where(squirrel.Eq{"id": tokenID})
 
@@ -56,7 +55,6 @@ func (r *TokenRepository) DeleteToken(tokenID string) error {
 		return err
 	}
 
-	ctx := context.Background()
 	_, err = r.db.ExecContext(ctx, sql, args...)
 	if err != nil {
 		if db.GetDBErrorNoRows(err) {
@@ -71,7 +69,7 @@ func (r *TokenRepository) DeleteToken(tokenID string) error {
 	return nil
 }
 
-func (r *TokenRepository) GetTokenIDByUserID(userID uint) (string, error) {
+func (r *TokenRepository) GetTokenIDByUserID(ctx context.Context, userID uint) (string, error) {
 	query := r.qb.Select("id").
 		From("refresh_tokens").
 		Where(squirrel.Eq{"user_id": userID})
@@ -82,7 +80,6 @@ func (r *TokenRepository) GetTokenIDByUserID(userID uint) (string, error) {
 	}
 
 	var refreshTokenID string
-	ctx := context.Background()
 	err = r.db.QueryRowContext(ctx, sql, args...).Scan(&refreshTokenID)
 	if err != nil {
 		if db.GetDBErrorNoRows(err) {
@@ -95,7 +92,7 @@ func (r *TokenRepository) GetTokenIDByUserID(userID uint) (string, error) {
 	return refreshTokenID, nil
 }
 
-func (r *TokenRepository) GetTokenByUserID(userID uint) (*models.RefreshToken, error) {
+func (r *TokenRepository) GetTokenByUserID(ctx context.Context, userID uint) (*models.RefreshToken, error) {
 	query := r.qb.Select("id", "user_id", "token", "expires_at", "created_at").
 		From("refresh_tokens").
 		Where(squirrel.Eq{"user_id": userID})
@@ -107,7 +104,6 @@ func (r *TokenRepository) GetTokenByUserID(userID uint) (*models.RefreshToken, e
 	}
 
 	var token models.RefreshToken
-	ctx := context.Background()
 	err = r.db.QueryRowContext(ctx, sql, args...).Scan(&token.ID, &token.UserID, &token.Token, &token.ExpiresAt, &token.CreatedAt)
 	if err != nil {
 		if db.GetDBErrorNoRows(err) {

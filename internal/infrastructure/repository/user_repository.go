@@ -25,7 +25,7 @@ func NewUserRepository(db *sql.DB) ports.UserRepository {
 	}
 }
 
-func (r *UserRepository) ConsultPassword(email string) (string, error) {
+func (r *UserRepository) ConsultPassword(ctx context.Context, email string) (string, error) {
 	query := r.qb.Select("password").
 		From("users").
 		Where(squirrel.Eq{"email": email}).
@@ -38,7 +38,6 @@ func (r *UserRepository) ConsultPassword(email string) (string, error) {
 	}
 
 	var password string
-	ctx := context.Background()
 	err = r.db.QueryRowContext(ctx, sqlStr, args...).Scan(&password)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -52,7 +51,7 @@ func (r *UserRepository) ConsultPassword(email string) (string, error) {
 	return password, nil
 }
 
-func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
+func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.User, error) {
 	query := r.qb.Select("id", "username", "email", "password", "role", "created_at", "updated_at").
 		From("users").
 		Where(squirrel.Eq{"email": email}).
@@ -65,7 +64,6 @@ func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
 	}
 
 	var User models.User
-	ctx := context.Background()
 	err = r.db.QueryRowContext(ctx, sqlStr, args...).Scan(
 		&User.ID, &User.Username, &User.Email, &User.Password, &User.Role, &User.CreatedAt, &User.UpdatedAt,
 	)
@@ -82,7 +80,7 @@ func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
 	return &User, nil
 }
 
-func (r *UserRepository) Create(user *models.User) (*models.UserResponse, error) {
+func (r *UserRepository) Create(ctx context.Context, user *models.User) (*models.UserResponse, error) {
 	query := r.qb.Insert("users").
 		Columns("username", "email", "password", "role", "created_at", "updated_at").
 		Values(user.Username, user.Email, user.Password, user.Role, time.Now(), time.Now())
@@ -93,7 +91,6 @@ func (r *UserRepository) Create(user *models.User) (*models.UserResponse, error)
 		return nil, err
 	}
 
-	ctx := context.Background()
 	result, err := r.db.ExecContext(ctx, sql, args...)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to execute query to create user")
@@ -115,7 +112,7 @@ func (r *UserRepository) Create(user *models.User) (*models.UserResponse, error)
 	return user.ToUserResponse(), nil
 }
 
-func (r *UserRepository) GetAll() ([]models.UserResponse, error) {
+func (r *UserRepository) GetAll(ctx context.Context, ) ([]models.UserResponse, error) {
 	logrus.Info("Retrieving all users from the database")
 	if r.db == nil {
 		logrus.Error("Database connection is nil")
@@ -132,7 +129,6 @@ func (r *UserRepository) GetAll() ([]models.UserResponse, error) {
 		return nil, err
 	}
 
-	ctx := context.Background()
 	rows, err := r.db.QueryContext(ctx, sql, args...)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to execute query to get all users")
@@ -161,7 +157,7 @@ func (r *UserRepository) GetAll() ([]models.UserResponse, error) {
 	return users, nil
 }
 
-func (r *UserRepository) GetByID(id uint) (*models.UserResponse, error) {
+func (r *UserRepository) GetByID(ctx context.Context, id uint) (*models.UserResponse, error) {
 	query := r.qb.Select("id", "username", "email", "role", "created_at", "updated_at").
 		From("users").
 		Where(squirrel.And{
@@ -176,7 +172,6 @@ func (r *UserRepository) GetByID(id uint) (*models.UserResponse, error) {
 	}
 
 	var user models.UserResponse
-	ctx := context.Background()
 	err = r.db.QueryRowContext(ctx, sqlStr, args...).Scan(
 		&user.ID, &user.Username, &user.Email, &user.Role,
 		&user.CreatedAt, &user.UpdatedAt,
@@ -194,7 +189,7 @@ func (r *UserRepository) GetByID(id uint) (*models.UserResponse, error) {
 	return &user, nil
 }
 
-func (r *UserRepository) Update(user *models.User) (*models.UserResponse, error) {
+func (r *UserRepository) Update(ctx context.Context, user *models.User) (*models.UserResponse, error) {
 	query := r.qb.Update("users").
 		Set("username", user.Username).
 		Set("email", user.Email).
@@ -208,7 +203,6 @@ func (r *UserRepository) Update(user *models.User) (*models.UserResponse, error)
 		return nil, err
 	}
 
-	ctx := context.Background()
 	result, err := r.db.ExecContext(ctx, sql, args...)
 	if err != nil {
 		return nil, err
@@ -226,7 +220,7 @@ func (r *UserRepository) Update(user *models.User) (*models.UserResponse, error)
 	return user.ToUserResponse(), nil
 }
 
-func (r *UserRepository) Delete(id uint) error {
+func (r *UserRepository) Delete(ctx context.Context, id uint) error {
 	query := r.qb.Update("users").
 		Set("deleted_at", time.Now()).
 		Where(squirrel.Eq{"id": id}).
@@ -238,7 +232,6 @@ func (r *UserRepository) Delete(id uint) error {
 		return err
 	}
 
-	ctx := context.Background()
 	result, err := r.db.ExecContext(ctx, sql, args...)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to execute query for deleting user")

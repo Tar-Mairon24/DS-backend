@@ -24,7 +24,7 @@ func NewPropertyHandler(propertyUsecase ports.PropertyUseCase) *PropertyHandler 
 func (h *PropertyHandler) GetProperties(c *gin.Context) {
 	logrus.Info("GetProperties endpoint called")
 
-	properties, err := h.propertyUsecase.GetAllProperties()
+	properties, err := h.propertyUsecase.GetAllProperties(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "Failed to retrieve properties",
@@ -59,7 +59,7 @@ func (h *PropertyHandler) GetPropertyByID(c *gin.Context) {
 		return
 	}
 
-	property, err := h.propertyUsecase.GetPropertyByID(uint(id))
+	property, err := h.propertyUsecase.GetPropertyByID(c.Request.Context(), uint(id))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "Failed to retrieve property",
@@ -93,7 +93,7 @@ func (h *PropertyHandler) CreateProperty(c *gin.Context) {
 		return
 	}
 
-	newProperty, err := h.propertyUsecase.CreateProperty(&property)
+	newProperty, err := h.propertyUsecase.CreateProperty(c.Request.Context(), &property)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "Failed to create property",
@@ -130,7 +130,7 @@ func (h *PropertyHandler) UpdateProperty(c *gin.Context) {
 	}
 
 	property.ID = uint(id)
-	updatedProperty, err := h.propertyUsecase.UpdateProperty(&property)
+	updatedProperty, err := h.propertyUsecase.UpdateProperty(c.Request.Context(), &property)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "Failed to update property",
@@ -157,7 +157,7 @@ func (h *PropertyHandler) DeleteProperty(c *gin.Context) {
 		return
 	}
 
-	err = h.propertyUsecase.DeleteProperty(uint(id))
+	err = h.propertyUsecase.DeleteProperty(c.Request.Context(), uint(id))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "Failed to delete property",

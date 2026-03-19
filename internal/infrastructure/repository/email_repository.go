@@ -26,7 +26,7 @@ func NewEmailRepository(db *sql.DB) ports.EmailRepository {
 }
 
 // SaveVerificationCode inserts a new verification token into the database
-func (r *EmailRepository) SaveVerificationCode(toEmail string, code string, motivo string) error {
+func (r *EmailRepository) SaveVerificationCode(ctx context.Context, toEmail string, code string, motivo string) error {
     expirationDate := time.Now().Add(48 * time.Hour)
 
     query := r.qb.Insert("verification_tokens").
@@ -39,7 +39,6 @@ func (r *EmailRepository) SaveVerificationCode(toEmail string, code string, moti
         return err
     }
 
-    ctx := context.Background()
     _, err = r.db.ExecContext(ctx, sql, args...)
     if err != nil {
         logrus.WithError(err).Error("Error inserting verification code in database")
@@ -51,7 +50,7 @@ func (r *EmailRepository) SaveVerificationCode(toEmail string, code string, moti
 }
 
 // GetIDFromEmail retrieves the user ID by email
-func (r *EmailRepository) GetIDFromEmail(toEmail string) (int, error) {
+func (r *EmailRepository) GetIDFromEmail(ctx context.Context, toEmail string) (int, error) {
     query := r.qb.Select("id").
         From("users").
         Where(squirrel.Eq{"email": toEmail})
@@ -63,7 +62,7 @@ func (r *EmailRepository) GetIDFromEmail(toEmail string) (int, error) {
     }
 
     var userID int
-    ctx := context.Background()
+
     err = r.db.QueryRowContext(ctx, sql, args...).Scan(&userID)
     if err != nil {
         if db.GetDBErrorNoRows(err) {
@@ -78,7 +77,7 @@ func (r *EmailRepository) GetIDFromEmail(toEmail string) (int, error) {
 }
 
 // VerifyTokenAndUser checks if a verification token is valid and not used
-func (r *EmailRepository) VerifyTokenAndUser(code string, toEmail string) (int, bool, error) {
+func (r *EmailRepository) VerifyTokenAndUser(ctx context.Context, code string, toEmail string) (int, bool, error) {
     query := r.qb.Select("t.user_id", "t.used").
         From("verification_tokens t").
         Join("users u ON t.user_id = u.id").
@@ -93,7 +92,7 @@ func (r *EmailRepository) VerifyTokenAndUser(code string, toEmail string) (int, 
 
     var userID int
     var used bool
-    ctx := context.Background()
+
     err = r.db.QueryRowContext(ctx, sql, args...).Scan(&userID, &used)
     if err != nil {
         if db.GetDBErrorNoRows(err) {
@@ -108,7 +107,7 @@ func (r *EmailRepository) VerifyTokenAndUser(code string, toEmail string) (int, 
 }
 
 // UpdateTokenAsUsed marks a token as used
-func (r *EmailRepository) UpdateTokenAsUsed(code string, userID int) error {
+func (r *EmailRepository) UpdateTokenAsUsed(ctx context.Context, code string, userID int) error {
     query := r.qb.Update("verification_tokens").
         Set("used", true).
         Set("used_at", time.Now()).
@@ -120,7 +119,7 @@ func (r *EmailRepository) UpdateTokenAsUsed(code string, userID int) error {
         return err
     }
 
-    ctx := context.Background()
+
     _, err = r.db.ExecContext(ctx, sql, args...)
     if err != nil {
         logrus.WithError(err).Error("Error updating token status")
@@ -132,7 +131,7 @@ func (r *EmailRepository) UpdateTokenAsUsed(code string, userID int) error {
 }
 
 // GetTokenVerificationStatus retrieves the verification status and motive of a token
-func (r *EmailRepository) GetTokenVerificationStatus(userID int) (bool, string, error) {
+func (r *EmailRepository) GetTokenVerificationStatus(ctx context.Context, userID int) (bool, string, error) {
     query := r.qb.Select("used", "motive").
         From("verification_tokens").
         Where(squirrel.Eq{"user_id": userID}).
@@ -147,7 +146,7 @@ func (r *EmailRepository) GetTokenVerificationStatus(userID int) (bool, string, 
 
     var used bool
     var motive string
-    ctx := context.Background()
+
     err = r.db.QueryRowContext(ctx, sql, args...).Scan(&used, &motive)
     if err != nil {
         if db.GetDBErrorNoRows(err) {
@@ -162,7 +161,7 @@ func (r *EmailRepository) GetTokenVerificationStatus(userID int) (bool, string, 
 }
 
 // GetLatestTokenInfo retrieves the resend count and token of the latest verification token
-func (r *EmailRepository) GetLatestTokenInfo(userID int) (int, string, error) {
+func (r *EmailRepository) GetLatestTokenInfo(ctx context.Context, userID int) (int, string, error) {
     query := r.qb.Select("resends", "token").
         From("verification_tokens").
         Where(squirrel.Eq{"user_id": userID}).
@@ -177,7 +176,7 @@ func (r *EmailRepository) GetLatestTokenInfo(userID int) (int, string, error) {
 
     var resends int
     var token string
-    ctx := context.Background()
+
     err = r.db.QueryRowContext(ctx, sql, args...).Scan(&resends, &token)
     if err != nil {
         if db.GetDBErrorNoRows(err) {
@@ -192,7 +191,7 @@ func (r *EmailRepository) GetLatestTokenInfo(userID int) (int, string, error) {
 }
 
 // UpdateTokenResendInfo updates the resend count and token for a verification token
-func (r *EmailRepository) UpdateTokenResendInfo(userID int, oldToken string, newToken string) error {
+func (r *EmailRepository) UpdateTokenResendInfo(ctx context.Context, userID int, oldToken string, newToken string) error {
     expirationDate := time.Now().Add(48 * time.Hour)
 
     query := r.qb.Update("verification_tokens").
@@ -210,7 +209,7 @@ func (r *EmailRepository) UpdateTokenResendInfo(userID int, oldToken string, new
         return err
     }
 
-    ctx := context.Background()
+
     _, err = r.db.ExecContext(ctx, sql, args...)
     if err != nil {
         logrus.WithError(err).Error("Error updating resend count")
@@ -222,7 +221,7 @@ func (r *EmailRepository) UpdateTokenResendInfo(userID int, oldToken string, new
 }
 
 // UpdateUserVerificationStatus marks a user as verified
-func (r *EmailRepository) UpdateUserVerificationStatus(userID int) error {
+func (r *EmailRepository) UpdateUserVerificationStatus(ctx context.Context, userID int) error {
     query := r.qb.Update("users").
         Set("verified", true).
         Where(squirrel.Eq{"id": userID})
@@ -233,7 +232,7 @@ func (r *EmailRepository) UpdateUserVerificationStatus(userID int) error {
         return err
     }
 
-    ctx := context.Background()
+
     _, err = r.db.ExecContext(ctx, sql, args...)
     if err != nil {
         logrus.WithError(err).Error("Error updating user verification status")

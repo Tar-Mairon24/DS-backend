@@ -2,6 +2,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"os"
 	"time"
@@ -93,7 +94,7 @@ func (j *JWTService) ValidateToken(tokenString string) (*models.JWTClaims, error
 	return nil, errors.New("invalid token claims")
 }
 
-func (j *JWTService) RefreshToken(tokenString string) (string, error) {
+func (j *JWTService) RefreshToken(ctx context.Context, tokenString string) (string, error) {
 	claims, err := j.ValidateToken(tokenString)
 	if err != nil {
 		parsedToken, parseErr := jwt.ParseWithClaims(tokenString, &models.JWTClaims{}, func(token *jwt.Token) (any, error) {
@@ -112,7 +113,7 @@ func (j *JWTService) RefreshToken(tokenString string) (string, error) {
 		}
 	}
 
-	user, err := j.userRepo.GetByID(claims.ID)
+	user, err := j.userRepo.GetByID(ctx, claims.ID)
 	if err != nil {
 		logrus.WithError(err).Error("User not found for token refresh")
 		return "", errors.New("user not found")
@@ -133,7 +134,7 @@ func (j *JWTService) RefreshToken(tokenString string) (string, error) {
 	return newToken, nil
 }
 
-func (j *JWTService) GetUserIDFromClaims(tokenString string) (uint, error) {
+func (j *JWTService) GetUserIDFromClaims(ctx context.Context, tokenString string) (uint, error) {
 	parsedToken, err := jwt.ParseWithClaims(tokenString, &models.JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return j.secret, nil
 	}, jwt.WithoutClaimsValidation())

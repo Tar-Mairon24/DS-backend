@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -29,12 +30,12 @@ func NewAuthUseCase(repo ports.UserRepository, tokenRepo ports.TokenRepository, 
 	}
 }
 
-func (au *authUseCase) Login(email string, password string) (*models.LoginResponse, error) {
+func (au *authUseCase) Login(ctx context.Context, email string, password string) (*models.LoginResponse, error) {
 	if email == "" || password == "" {
 		logrus.Error("Email and password cannot be empty")
 		return nil, errors.New("email and password cannot be empty")
 	}
-	user, err := au.repo.GetByEmail(email)
+	user, err := au.repo.GetByEmail(ctx, email)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to get user by email")
 		return nil, errors.New("user not found")
@@ -45,12 +46,12 @@ func (au *authUseCase) Login(email string, password string) (*models.LoginRespon
 		return nil, err
 	}
 
-	oldtoken, err := au.tokenRepo.GetTokenByUserID(user.ID)
+	oldtoken, err := au.tokenRepo.GetTokenByUserID(ctx, user.ID)
 	if err != nil {
 		logrus.Warn("Failed to get old refresh token, proceeding to create a new one")
 	}
 	if oldtoken != nil {
-		err = au.tokenRepo.DeleteToken(oldtoken.ID)
+		err = au.tokenRepo.DeleteToken(ctx, oldtoken.ID)
 		if err != nil {
 			logrus.WithError(err).Error("Failed to delete old refresh token")
 			return nil, err
@@ -63,7 +64,7 @@ func (au *authUseCase) Login(email string, password string) (*models.LoginRespon
 		return nil, err
 	}
 	expiresAt := time.Now().Add(7 * 24 * time.Hour)
-	err = au.tokenRepo.SaveToken(&models.RefreshToken{
+	err = au.tokenRepo.SaveToken(ctx, &models.RefreshToken{
 		ID:        idToken,
 		UserID:    user.ID,
 		Token:     refreshToken,
@@ -88,13 +89,13 @@ func (au *authUseCase) Login(email string, password string) (*models.LoginRespon
 	}, nil
 }
 
-func (au *authUseCase) Logout(userID uint) error {
+func (au *authUseCase) Logout(ctx context.Context, userID uint) error {
 	if userID == 0 {
 		logrus.Error("User ID cannot be empty")
 		return errors.New("user ID cannot be empty")
 	}
 
-	tokenResponseID, err := au.tokenRepo.GetTokenIDByUserID(userID)
+	tokenResponseID, err := au.tokenRepo.GetTokenIDByUserID(ctx, userID)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to get token ID by user ID")
 		return err
@@ -104,7 +105,7 @@ func (au *authUseCase) Logout(userID uint) error {
 		return errors.New("no token found for the given user ID, user was not logged in")
 	}
 
-	err = au.tokenRepo.DeleteToken(tokenResponseID)
+	err = au.tokenRepo.DeleteToken(ctx, tokenResponseID)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to delete token")
 		return err
@@ -112,19 +113,19 @@ func (au *authUseCase) Logout(userID uint) error {
 	return nil
 }
 
-func (au *authUseCase) RefreshToken(data models.RefreshTokenData) (*models.RefreshTokenData, error) {
+func (au *authUseCase) RefreshToken(ctx context.Context, data models.RefreshTokenData) (*models.RefreshTokenData, error) {
 	if data.JwtToken == "" || data.RefreshToken == "" {
 		err := errors.New("JWT token and refresh token cannot be empty")
 		return nil, err
 	}
 
-	UserID, err := au.jwtService.GetUserIDFromClaims(data.JwtToken)
+	UserID, err := au.jwtService.GetUserIDFromClaims(ctx, data.JwtToken)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to get user ID from JWT claims")
 		return nil, err
 	}
 
-	refreshToken, err := au.tokenRepo.GetTokenByUserID(UserID)
+	refreshToken, err := au.tokenRepo.GetTokenByUserID(ctx, UserID)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to get refresh token by user ID")
 		return nil, err
@@ -143,7 +144,7 @@ func (au *authUseCase) RefreshToken(data models.RefreshTokenData) (*models.Refre
 		return nil, errors.New("invalid refresh token")
 	}
 
-	newJwtToken, err := au.jwtService.RefreshToken(data.JwtToken)
+	newJwtToken, err := au.jwtService.RefreshToken(ctx, data.JwtToken)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to refresh token")
 		return nil, err
@@ -155,13 +156,13 @@ func (au *authUseCase) RefreshToken(data models.RefreshTokenData) (*models.Refre
 	}, nil
 }
 
-func (au *authUseCase) GetStatus(userID uint, refreshToken string) error {
+func (au *authUseCase) GetStatus(ctx context.Context, userID uint, refreshToken string) error {
 	if userID == 0 || refreshToken == "" {
 		err := errors.New("user ID and refresh token cannot be empty")
 		return err
 	}
 
-	savedToken, err := au.tokenRepo.GetTokenByUserID(userID)
+	savedToken, err := au.tokenRepo.GetTokenByUserID(ctx, userID)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to get refresh token by user ID")
 		return err

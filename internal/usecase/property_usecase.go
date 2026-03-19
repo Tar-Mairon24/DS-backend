@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"context"
 	"errors"
 
 	"github.com/sirupsen/logrus"
@@ -19,16 +20,16 @@ func NewPropertyUseCase(propertyRepo ports.PropertyRepository) ports.PropertyUse
 	}
 }
 
-func (p *PropertyUseCase) GetAllProperties() ([]models.PropertyResponse, error) {
-	properties, err := p.propertyRepo.GetAll()
+func (p *PropertyUseCase) GetAllProperties(ctx context.Context, ) ([]models.PropertyResponse, error) {
+	properties, err := p.propertyRepo.GetAll(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return properties, nil
 }
 
-func (p *PropertyUseCase) GetPropertyByID(id uint) (*models.PropertyResponse, error) {
-	property, err := p.propertyRepo.GetByID(id)
+func (p *PropertyUseCase) GetPropertyByID(ctx context.Context, id uint) (*models.PropertyResponse, error) {
+	property, err := p.propertyRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +39,7 @@ func (p *PropertyUseCase) GetPropertyByID(id uint) (*models.PropertyResponse, er
 	return property, nil
 }
 
-func (p *PropertyUseCase) CreateProperty(property *models.Property) (*models.PropertyResponse, error) {
+func (p *PropertyUseCase) CreateProperty(ctx context.Context, property *models.Property) (*models.PropertyResponse, error) {
 	if property == nil {
 		logrus.Error("Property cannot be nil")
 		return nil, errors.New("property cannot be nil")
@@ -52,14 +53,14 @@ func (p *PropertyUseCase) CreateProperty(property *models.Property) (*models.Pro
 		return nil, errors.New("price must be greater than zero")
 	}
 
-	createdProperty, err := p.propertyRepo.Create(property)
+	createdProperty, err := p.propertyRepo.Create(ctx, property)
 	if err != nil {
 		return nil, err
 	}
 	return createdProperty, nil
 }
 
-func (p *PropertyUseCase) UpdateProperty(property *models.Property) (*models.PropertyResponse, error) {
+func (p *PropertyUseCase) UpdateProperty(ctx context.Context, property *models.Property) (*models.PropertyResponse, error) {
 	if property == nil {
 		logrus.Error("Property cannot be nil")
 		return nil, errors.New("property cannot be nil")
@@ -77,20 +78,20 @@ func (p *PropertyUseCase) UpdateProperty(property *models.Property) (*models.Pro
 		return nil, errors.New("price must be greater than zero")
 	}
 
-	updatedProperty, err := p.propertyRepo.Update(property)
+	updatedProperty, err := p.propertyRepo.Update(ctx, property)
 	if err != nil {
 		return nil, err
 	}
 	return updatedProperty, nil
 }
 
-func (p *PropertyUseCase) DeleteProperty(id uint) error {
+func (p *PropertyUseCase) DeleteProperty(ctx context.Context, id uint) error {
 	if id <= 0 {
 		logrus.Error("Property ID must be provided")
 		return errors.New("property ID must be provided")
 	}
 
-	err := p.propertyRepo.Delete(id)
+	err := p.propertyRepo.Delete(ctx, id)
 	if err != nil {
 		return err
 	}

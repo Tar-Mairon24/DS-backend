@@ -1,39 +1,52 @@
 package ports
 
-import "ds-backend/internal/domain/models"
+import (
+	"context"
+
+	"ds-backend/internal/domain/models"
+)
 
 type UserRepository interface {
-	GetAll() ([]models.UserResponse, error)
-	GetByID(id uint) (*models.UserResponse, error)
-	GetByEmail(email string) (*models.User, error)
-	ConsultPassword(email string) (string, error)
-	Create(user *models.User) (*models.UserResponse, error)
-	Update(user *models.User) (*models.UserResponse, error)
-	Delete(id uint) error
+	GetAll(ctx context.Context) ([]models.UserResponse, error)
+	GetByID(ctx context.Context, id uint) (*models.UserResponse, error)
+	GetByEmail(ctx context.Context, email string) (*models.User, error)
+	ConsultPassword(ctx context.Context, email string) (string, error)
+	Create(ctx context.Context, user *models.User) (*models.UserResponse, error)
+	Update(ctx context.Context, user *models.User) (*models.UserResponse, error)
+	Delete(ctx context.Context, id uint) error
 }
 
 type PropertyRepository interface {
-	GetAll() ([]models.PropertyResponse, error)
-	GetByID(id uint) (*models.PropertyResponse, error)
-	Create(property *models.Property) (*models.PropertyResponse, error)
-	Update(property *models.Property) (*models.PropertyResponse, error)
-	Delete(id uint) error
+	GetAll(ctx context.Context) ([]models.PropertyResponse, error)
+	GetByID(ctx context.Context, id uint) (*models.PropertyResponse, error)
+	Create(ctx context.Context, property *models.Property) (*models.PropertyResponse, error)
+	Update(ctx context.Context, property *models.Property) (*models.PropertyResponse, error)
+	Delete(ctx context.Context, id uint) error
 }
 
 type TokenRepository interface {
-	SaveToken(token *models.RefreshToken) error
-	DeleteToken(tokenID string) error
-	GetTokenIDByUserID(userID uint) (string, error)
-	GetTokenByUserID(userID uint) (*models.RefreshToken, error)
+	SaveToken(ctx context.Context, token *models.RefreshToken) error
+	DeleteToken(ctx context.Context, tokenID string) error
+	GetTokenIDByUserID(ctx context.Context, userID uint) (string, error)
+	GetTokenByUserID(ctx context.Context, userID uint) (*models.RefreshToken, error)
 }
 
 type EmailRepository interface {
-	SaveVerificationCode(toEmail string, code string, motivo string) error
-	GetIDFromEmail(toEmail string) (int, error)
-	VerifyTokenAndUser(code string, toEmail string) (int, bool, error)
-	UpdateUserVerificationStatus(userID int) error
-	UpdateTokenAsUsed(code string, userID int) error
-	GetTokenVerificationStatus(userID int) (bool, string, error)
-	GetLatestTokenInfo(userID int) (int, string, error)
-	UpdateTokenResendInfo(userID int, oldToken string, newToken string) error
+	SaveVerificationCode(ctx context.Context, toEmail string, code string, motivo string) error
+	GetIDFromEmail(ctx context.Context, toEmail string) (int, error)
+	VerifyTokenAndUser(ctx context.Context, code string, toEmail string) (int, bool, error)
+	UpdateUserVerificationStatus(ctx context.Context, userID int) error
+	UpdateTokenAsUsed(ctx context.Context, code string, userID int) error
+	GetTokenVerificationStatus(ctx context.Context, userID int) (bool, string, error)
+	GetLatestTokenInfo(ctx context.Context, userID int) (int, string, error)
+	UpdateTokenResendInfo(ctx context.Context, userID int, oldToken string, newToken string) error
+}
+
+type ImageRepository interface {
+	SaveImage(ctx context.Context, image *models.Image) (*models.Image, error)
+	GetImageByID(ctx context.Context, id uint) (*models.Image, error)
+	GetImagesByPropertyID(ctx context.Context, propertyID uint) ([]models.Image, error)
+	GetMainImageByPropertyID(ctx context.Context, propertyID uint) (*models.Image, error)
+	UpdateImage(ctx context.Context, image *models.Image) (*models.Image, error)
+	DeleteImage(ctx context.Context, id uint) error
 }

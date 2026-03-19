@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"context"
 	"errors"
 
 	"github.com/sirupsen/logrus"
@@ -22,15 +23,15 @@ func NewUserUseCase(repo ports.UserRepository, hashing middleware.HashingInterfa
 	}
 }
 
-func (uc *UserUseCase) GetAllUsers() ([]models.UserResponse, error) {
-	return uc.repo.GetAll()
+func (uc *UserUseCase) GetAllUsers(ctx context.Context) ([]models.UserResponse, error) {
+	return uc.repo.GetAll(ctx)
 }
 
-func (uc *UserUseCase) GetUserByID(id uint) (*models.UserResponse, error) {
-	return uc.repo.GetByID(id)
+func (uc *UserUseCase) GetUserByID(ctx context.Context, id uint) (*models.UserResponse, error) {
+	return uc.repo.GetByID(ctx, id)
 }
 
-func (uc *UserUseCase) CreateUser(user *models.User) (*models.UserResponse, error) {
+func (uc *UserUseCase) CreateUser(ctx context.Context, user *models.User) (*models.UserResponse, error) {
 	if user.Password == "" {
 		logrus.Error("Password cannot be empty")
 		return nil, errors.New("password cannot be empty")
@@ -52,13 +53,13 @@ func (uc *UserUseCase) CreateUser(user *models.User) (*models.UserResponse, erro
 	user.Password = hashedPassword
 
 
-	return uc.repo.Create(user)
+	return uc.repo.Create(ctx, user)
 }
 
-func (uc *UserUseCase) UpdateUser(user *models.User) (*models.UserResponse, error) {
-	return uc.repo.Update(user)
+func (uc *UserUseCase) UpdateUser(ctx context.Context, user *models.User) (*models.UserResponse, error) {
+	return uc.repo.Update(ctx, user)
 }
 
-func (uc *UserUseCase) DeleteUser(id uint) error {
-	return uc.repo.Delete(id)
+func (uc *UserUseCase) DeleteUser(ctx context.Context, id uint) error {
+	return uc.repo.Delete(ctx, id)
 }

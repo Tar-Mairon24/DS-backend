@@ -1,26 +1,30 @@
 package ports
 
-import "ds-backend/internal/domain/models"
+import (
+	"context"
+
+	"ds-backend/internal/domain/models"
+)
 
 type UserUseCase interface {
-	GetAllUsers() ([]models.UserResponse, error)
-	GetUserByID(id uint) (*models.UserResponse, error)
-	CreateUser(user *models.User) (*models.UserResponse, error)
-	UpdateUser(user *models.User) (*models.UserResponse, error)
-	DeleteUser(id uint) error
+	GetAllUsers(ctx context.Context) ([]models.UserResponse, error)
+	GetUserByID(ctx context.Context, id uint) (*models.UserResponse, error)
+	CreateUser(ctx context.Context, user *models.User) (*models.UserResponse, error)
+	UpdateUser(ctx context.Context, user *models.User) (*models.UserResponse, error)
+	DeleteUser(ctx context.Context, id uint) error
 }
 
 type PropertyUseCase interface {
-	GetAllProperties() ([]models.PropertyResponse, error)
-	GetPropertyByID(id uint) (*models.PropertyResponse, error)
-	CreateProperty(property *models.Property) (*models.PropertyResponse, error)
-	UpdateProperty(property *models.Property) (*models.PropertyResponse, error)
-	DeleteProperty(id uint) error
+	GetAllProperties(ctx context.Context) ([]models.PropertyResponse, error)
+	GetPropertyByID(ctx context.Context, id uint) (*models.PropertyResponse, error)
+	CreateProperty(ctx context.Context, property *models.Property) (*models.PropertyResponse, error)
+	UpdateProperty(ctx context.Context, property *models.Property) (*models.PropertyResponse, error)
+	DeleteProperty(ctx context.Context, id uint) error
 }
 
 type AuthUseCase interface {
-	Login(email string, password string) (*models.LoginResponse, error)
-	Logout(id uint) error
-	RefreshToken(data models.RefreshTokenData) (*models.RefreshTokenData, error)
-	GetStatus(userID uint, refreshToken string) error
+	Login(ctx context.Context, email string, password string) (*models.LoginResponse, error)
+	Logout(ctx context.Context, id uint) error
+	RefreshToken(ctx context.Context, data models.RefreshTokenData) (*models.RefreshTokenData, error)
+	GetStatus(ctx context.Context, userID uint, refreshToken string) error
 }

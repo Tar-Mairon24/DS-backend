@@ -25,7 +25,7 @@ func NewPropertyRepository(db *sql.DB) ports.PropertyRepository {
 	}
 }
 
-func (r *PropertyRepository) GetAll() ([]models.PropertyResponse, error) {
+func (r *PropertyRepository) GetAll(ctx context.Context, ) ([]models.PropertyResponse, error) {
 	query := r.qb.Select("*").
 		From("properties").
 		Where(squirrel.Expr("deleted_at IS NULL"))
@@ -35,7 +35,6 @@ func (r *PropertyRepository) GetAll() ([]models.PropertyResponse, error) {
 		logrus.WithError(err).Error("Failed to build SQL query for getting all properties")
 		return nil, err
 	}
-	ctx := context.Background()
 	rows, err := r.db.QueryContext(ctx, sqlStr, args...)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to execute query for getting all properties")
@@ -104,7 +103,7 @@ func (r *PropertyRepository) GetAll() ([]models.PropertyResponse, error) {
 	return properties, nil
 }
 
-func (r *PropertyRepository) GetByID(id uint) (*models.PropertyResponse, error) {
+func (r *PropertyRepository) GetByID(ctx context.Context, id uint) (*models.PropertyResponse, error) {
 	query := r.qb.Select("*").
 		From("properties").
 		Where(squirrel.And{
@@ -119,7 +118,6 @@ func (r *PropertyRepository) GetByID(id uint) (*models.PropertyResponse, error) 
 	}
 
 	var property models.Property
-	ctx := context.Background()
 	err = r.db.QueryRowContext(ctx, sqlStr, args...).Scan(
 		&property.ID,
 		&property.Title,
@@ -165,7 +163,7 @@ func (r *PropertyRepository) GetByID(id uint) (*models.PropertyResponse, error) 
 	return property.ToResponse(), nil
 }
 
-func (r *PropertyRepository) Create(property *models.Property) (*models.PropertyResponse, error) {
+func (r *PropertyRepository) Create(ctx context.Context, property *models.Property) (*models.PropertyResponse, error) {
     query := r.qb.Insert("properties").
         Columns(
             "title", "listing_date", "address", "neighborhood", "city",
@@ -190,7 +188,6 @@ func (r *PropertyRepository) Create(property *models.Property) (*models.Property
         return nil, err
     }
 
-	ctx := context.Background()
     result, err := r.db.ExecContext(ctx, sqlStr, args...)
     if err != nil {
         logrus.WithError(err).Error("Failed to execute query for creating a new property")
@@ -213,7 +210,7 @@ func (r *PropertyRepository) Create(property *models.Property) (*models.Property
     return property.ToResponse(), nil
 }
 
-func (r *PropertyRepository) Update(property *models.Property) (*models.PropertyResponse, error) {
+func (r *PropertyRepository) Update(ctx context.Context, property *models.Property) (*models.PropertyResponse, error) {
 	query := r.qb.Update("properties").
 		Set("title", property.Title).
 		Set("listing_date", property.ListingDate).
@@ -252,7 +249,6 @@ func (r *PropertyRepository) Update(property *models.Property) (*models.Property
 		return nil, err
 	}
 
-	ctx := context.Background()
 	result, err := r.db.ExecContext(ctx, sqlStr, args...)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to execute query for updating a property")
@@ -274,7 +270,7 @@ func (r *PropertyRepository) Update(property *models.Property) (*models.Property
 	return property.ToResponse(), nil
 }
 
-func (r *PropertyRepository) Delete(id uint) error {
+func (r *PropertyRepository) Delete(ctx context.Context, id uint) error {
 	query := r.qb.Update("properties").
 		Set("deleted_at", squirrel.Expr("NOW()")).
 		Where(squirrel.Eq{"id": id}).
@@ -286,7 +282,6 @@ func (r *PropertyRepository) Delete(id uint) error {
 		return err
 	}
 
-	ctx := context.Background()
 	result, err := r.db.ExecContext(ctx, sqlStr, args...)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to execute query for deleting a property")

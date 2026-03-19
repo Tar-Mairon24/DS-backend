@@ -34,7 +34,7 @@ func (h *AuthHandler) UserLogin(c *gin.Context) {
 		return
 	}
 
-	loginResponse, err := h.authUsecase.Login(loginData.Email, loginData.Password)
+	loginResponse, err := h.authUsecase.Login(c.Request.Context(),loginData.Email, loginData.Password)
 	if err != nil {
 		logrus.WithError(err).Error("Login failed")
 		c.JSON(http.StatusUnauthorized, gin.H{
@@ -78,7 +78,7 @@ func (h *AuthHandler) UserLogout(c *gin.Context) {
 		})
 		return
 	}
-	tokenId, err := h.jwtService.GetUserIDFromClaims(jwtToken)
+	tokenId, err := h.jwtService.GetUserIDFromClaims(c.Request.Context(), jwtToken)
 	if err != nil || tokenId != uint(userID) {
 		logrus.WithError(err).Error("Unauthorized logout attempt")
 		c.JSON(http.StatusUnauthorized, gin.H{
@@ -88,7 +88,7 @@ func (h *AuthHandler) UserLogout(c *gin.Context) {
 		return
 	}	
 
-	if err := h.authUsecase.Logout(logoutData.UserID); err != nil {
+	if err := h.authUsecase.Logout(c.Request.Context(), logoutData.UserID); err != nil {
 		if err.Error() == "no token found for the given user ID, user was not logged in" {
 			logrus.Warn("User was not logged in")
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -140,7 +140,7 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	refreshTokenData.JwtToken = jwtToken
 
 	logrus.Info("RefreshToken endpoint called")
-	newToken, err := h.authUsecase.RefreshToken(refreshTokenData)
+	newToken, err := h.authUsecase.RefreshToken(c.Request.Context(), refreshTokenData)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to refresh token")
 		c.JSON(http.StatusUnauthorized, gin.H{
@@ -189,7 +189,7 @@ func (h *AuthHandler) GetStatus(c *gin.Context) {
 		return
 	}
 
-	err = h.authUsecase.GetStatus(claims.ID, refreshToken)
+	err = h.authUsecase.GetStatus(c.Request.Context(), claims.ID, refreshToken)
 	if err != nil {
 		logrus.WithError(err).Error("Invalid refresh token")
 		c.JSON(http.StatusUnauthorized, gin.H{

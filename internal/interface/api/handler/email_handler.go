@@ -31,7 +31,7 @@ func (h *EmailHandler) SendVerificationEmail(c *gin.Context) {
         return
     }
 
-    err := h.emailService.SendVerificationEmail(requestData.Email, requestData.Reason)
+    err := h.emailService.SendVerificationEmail(c.Request.Context(), requestData.Email, requestData.Reason)
     if err != nil {
         log.Println("Error sending verification email:", err)
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send verification email", "message": err.Error()})
@@ -49,7 +49,7 @@ func (h *EmailHandler) VerifyEmail(c *gin.Context) {
         return
     }
 
-    _, err := h.emailService.VerifyEmail(verifyData)
+    _, err := h.emailService.VerifyEmail(c.Request.Context(), verifyData)
     if err != nil {
         log.Println("Error verifying email:", err)
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to verify email", "message": err.Error()})
@@ -69,7 +69,7 @@ func (h *EmailHandler) ResendVerificationCode(c *gin.Context) {
         return
     }
 
-    err := h.emailService.ResendVerificationEmail(resendData.Email)
+    err := h.emailService.ResendVerificationEmail(c.Request.Context(), resendData.Email)
     if err != nil {
         log.Println("Error resending verification code:", err)
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to resend verification code", "message": err.Error()})

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"crypto/rand"
 	"errors"
 	"fmt"
@@ -24,26 +25,26 @@ func NewEmailService(emailRepo ports.EmailRepository) ports.EmailService {
 	}
 }
 
-func (s *EmailService) SendVerificationEmail(toEmail string, motivo string) error {
-	verificationCode := s.generateVerificationCode()
+func (s *EmailService) SendVerificationEmail(ctx context.Context, toEmail string, motivo string) error {
+	verificationCode := s.generateVerificationCode(ctx)
 
-	if err := s.emailRepo.SaveVerificationCode(toEmail, verificationCode, motivo); err != nil {
+	if err := s.emailRepo.SaveVerificationCode(ctx, toEmail, verificationCode, motivo); err != nil {
 		return err
 	}
 
-	if err := s.sendEmail(toEmail, verificationCode); err != nil {
+	if err := s.sendEmail(ctx, toEmail, verificationCode); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *EmailService) VerifyEmail(verificacionData models.EmailVerification) (bool, error) {
+func (s *EmailService) VerifyEmail(ctx context.Context, verificacionData models.EmailVerification) (bool, error) {
 	if verificacionData.Code == "" || verificacionData.Email == "" {
 		return false, errors.New("verification code and email must be provided")
 	}
 
-	userID, isUsed, err := s.emailRepo.VerifyTokenAndUser(verificacionData.Code, verificacionData.Email)
+	userID, isUsed, err := s.emailRepo.VerifyTokenAndUser(ctx, verificacionData.Code, verificacionData.Email)
 	if err != nil {
 		return false, err
 	}
@@ -52,28 +53,28 @@ func (s *EmailService) VerifyEmail(verificacionData models.EmailVerification) (b
 		return false, errors.New("verification code has already been used")
 	}
 
-	if err := s.emailRepo.UpdateUserVerificationStatus(userID); err != nil {
+	if err := s.emailRepo.UpdateUserVerificationStatus(ctx, userID); err != nil {
 		return false, err
 	}
 
-	if err := s.emailRepo.UpdateTokenAsUsed(verificacionData.Code, userID); err != nil {
+	if err := s.emailRepo.UpdateTokenAsUsed(ctx, verificacionData.Code, userID); err != nil {
 		return false, err
 	}
 
 	return true, nil
 }
 
-func (s *EmailService) ResendVerificationEmail(toEmail string) error {
+func (s *EmailService) ResendVerificationEmail(ctx context.Context, toEmail string) error {
 	if toEmail == "" {
 		return errors.New("email must be provided")
 	}
 
-	userID, err := s.emailRepo.GetIDFromEmail(toEmail)
+	userID, err := s.emailRepo.GetIDFromEmail(ctx, toEmail)
 	if err != nil {
 		return err
 	}
 
-	usado, motivo, err := s.emailRepo.GetTokenVerificationStatus(userID)
+	usado, motivo, err := s.emailRepo.GetTokenVerificationStatus(ctx, userID)
 	if err != nil {
 		return err
 	}
@@ -81,10 +82,10 @@ func (s *EmailService) ResendVerificationEmail(toEmail string) error {
 	if usado == true {
 		log.Println("Code already verified for user:", toEmail)
 		motivo = "Reintento de verificacion por el motivo: " + motivo
-		return s.SendVerificationEmail(toEmail, motivo)
+		return s.SendVerificationEmail(ctx, toEmail, motivo)
 	}
 
-	reenviado, token, err := s.emailRepo.GetLatestTokenInfo(userID)
+	reenviado, token, err := s.emailRepo.GetLatestTokenInfo(ctx, userID)
 	if err != nil {
 		return err
 	}
@@ -95,13 +96,13 @@ func (s *EmailService) ResendVerificationEmail(toEmail string) error {
 		return errors.New("maximum number of resends reached")
 	}
 
-	verificationCode := s.generateVerificationCode()
+	verificationCode := s.generateVerificationCode(ctx)
 
-	if err := s.sendEmail(toEmail, verificationCode); err != nil {
+	if err := s.sendEmail(ctx, toEmail, verificationCode); err != nil {
 		return err
 	}
 
-	if err := s.emailRepo.UpdateTokenResendInfo(userID, token, verificationCode); err != nil {
+	if err := s.emailRepo.UpdateTokenResendInfo(ctx, userID, token, verificationCode); err != nil {
 		return err
 	}
 
@@ -110,7 +111,7 @@ func (s *EmailService) ResendVerificationEmail(toEmail string) error {
 	return nil
 }
 
-func (s *EmailService) sendEmail(toEmail string, verificationCode string) error {
+func (s *EmailService) sendEmail(ctx context.Context, toEmail string, verificationCode string) error {
 	smtpUser := os.Getenv("SMTP_USER")
 	smtpPass := os.Getenv("SMTP_PASS")
 	apiPort := os.Getenv("API_PORT")
@@ -153,7 +154,7 @@ func (s *EmailService) sendEmail(toEmail string, verificationCode string) error 
 	return nil
 }
 
-func (s *EmailService) generateVerificationCode() string {
+func (s *EmailService) generateVerificationCode(ctx context.Context, ) string {
 	n, err := rand.Int(rand.Reader, big.NewInt(1000000)) // 0..999999
 	if err != nil {
 		log.Printf("failed to generate verification code: %v", err)

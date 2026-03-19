@@ -24,7 +24,7 @@ func NewUserHandler(userUsecase ports.UserUseCase) *UserHandler {
 func (h *UserHandler) GetUsers(c *gin.Context) {
 	logrus.Info("GetUsers endpoint called")
 
-	users, err := h.userUsecase.GetAllUsers()
+	users, err := h.userUsecase.GetAllUsers(c.Request.Context())
 	if err != nil {
 		logrus.WithError(err).Error("Failed to get users")
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -64,7 +64,7 @@ func (h *UserHandler) GetUserByID(c *gin.Context) {
 		return
 	}
 
-	user, err := h.userUsecase.GetUserByID(uint(userID))
+	user, err := h.userUsecase.GetUserByID(c.Request.Context(), uint(userID))
 	if err != nil {
 		logrus.WithError(err).Error("Failed to get user")
 		c.JSON(http.StatusNotFound, gin.H{
@@ -91,7 +91,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		return
 	}
 
-	userResponse, err := h.userUsecase.CreateUser(&user)
+	userResponse, err := h.userUsecase.CreateUser(c.Request.Context(), &user)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to create user")
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -118,7 +118,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	UserResponse, err := h.userUsecase.UpdateUser(&user)
+	UserResponse, err := h.userUsecase.UpdateUser(c.Request.Context(), &user)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to update user")
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -148,7 +148,7 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 		return
 	}
 
-	if err := h.userUsecase.DeleteUser(uint(userID)); err != nil {
+	if err := h.userUsecase.DeleteUser(c.Request.Context(), uint(userID)); err != nil {
 		logrus.WithError(err).Error("Failed to delete user")
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "Failed to delete user",
