@@ -1,19 +1,4 @@
 services:
-  migration:
-    image: migrate/migrate:latest
-    container_name: ds_migration
-    volumes:
-      - ./migrations:/migrations
-    command: -verbose -path=/migrations -database="mysql://${DB_USER}:${DB_PASSWORD}@tcp(ds_database:3306)/${DB_NAME}" up
-    depends_on:
-      mysql:
-        condition: service_healthy
-    networks:
-      - ds_network
-    environment:
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME} 
 
   backend:
     container_name: ds_backend
