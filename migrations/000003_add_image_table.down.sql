@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS images;
+DROP TABLE images;

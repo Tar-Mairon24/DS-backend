@@ -28,3 +28,13 @@ type AuthUseCase interface {
 	RefreshToken(ctx context.Context, data models.RefreshTokenData) (*models.RefreshTokenData, error)
 	GetStatus(ctx context.Context, userID uint, refreshToken string) error
 }
+
+type ImageUseCase interface {
+	SaveImage(ctx context.Context, fileName string, image *models.Image) (*models.Image, error)
+	GetImageByID(ctx context.Context, id uint) (*models.Image, error)
+	GetImagesByPropertyID(ctx context.Context, propertyID uint) ([]models.Image, error)
+	GetMainImageByPropertyID(ctx context.Context, propertyID uint) (*models.Image, error)
+	UpdateMainImageStatus(ctx context.Context, propertyID uint, imageID uint) error
+	UpdateImage(ctx context.Context, image *models.Image) (*models.Image, error)
+	DeleteImage(ctx context.Context, id uint) error
+}

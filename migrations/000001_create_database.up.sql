@@ -1,9 +1,7 @@
-CREATE DATABASE IF NOT EXISTS inmosoftDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
 USE inmosoftDB;
 
 -- Create Users table
-CREATE TABLE IF NOT EXISTS users (
+CREATE TABLE users (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL,
@@ -17,7 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Create Properties table
-CREATE TABLE IF NOT EXISTS properties (
+CREATE TABLE properties (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     listing_date TIMESTAMP NULL,
@@ -57,7 +55,7 @@ CREATE TABLE IF NOT EXISTS properties (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Create RefreshTokens table
-CREATE TABLE IF NOT EXISTS refresh_tokens (
+CREATE TABLE refresh_tokens (
     id VARCHAR(255) PRIMARY KEY,
     token VARCHAR(500) UNIQUE NOT NULL,
     user_id INT UNSIGNED NOT NULL,
@@ -68,7 +66,7 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Create VerificationTokens table (for email verification)
-CREATE TABLE IF NOT EXISTS verification_tokens (
+CREATE TABLE verification_tokens (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     token VARCHAR(255) NOT NULL,
     user_id INT UNSIGNED NOT NULL,
@@ -85,7 +83,7 @@ CREATE TABLE IF NOT EXISTS verification_tokens (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Create user_properties join table (many-to-many)
-CREATE TABLE IF NOT EXISTS user_properties (
+CREATE TABLE user_properties (
     user_id INT UNSIGNED NOT NULL,
     property_id INT UNSIGNED NOT NULL,
     PRIMARY KEY (user_id, property_id),

@@ -3,11 +3,14 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
+	"time"
 
 	"github.com/Masterminds/squirrel"
 
 	"ds-backend/internal/domain/models"
 	"ds-backend/internal/domain/ports"
+	"ds-backend/internal/infrastructure/db"
 )
 
 type ImageRepository struct {
@@ -23,31 +26,207 @@ func NewImageRepository(db *sql.DB) ports.ImageRepository {
 }
 
 func (r *ImageRepository) SaveImage(ctx context.Context, image *models.Image) (*models.Image, error) {
-	
-	return nil, nil
+	query := r.qb.Insert("images").
+		Columns("property_id", "path", "description", "main_image", "created_at").
+		Values(image.PropertyID, image.Path, image.Description, image.MainImage, time.Now())
+
+	sql, args, err := query.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := r.db.ExecContext(ctx, sql, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		return nil, err
+	}
+
+	image.ID = uint(id)
+	return image, nil
 }
 
 func (r *ImageRepository) GetImageByID(ctx context.Context, id uint) (*models.Image, error) {
-	// Implement the logic to retrieve an image by its ID from the database
-	return nil, nil
+	query := r.qb.Select("id", "property_id", "path", "description", "main_image", "created_at", "updated_at").
+		From("images").
+		Where(squirrel.Eq{"id": id}).
+		Where(squirrel.Expr("deleted_at IS NULL"))
+	
+	sql, args, err := query.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	var image models.Image
+	err = r.db.QueryRowContext(ctx, sql, args...).Scan(
+		&image.ID,
+		&image.PropertyID,
+		&image.Path,
+		&image.Description,
+		&image.MainImage,
+		&image.CreatedAt,
+		&image.UpdatedAt,
+	)
+	if err != nil {
+		if db.GetDBErrorNoRows(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &image, nil
 }
 
 func (r *ImageRepository) GetImagesByPropertyID(ctx context.Context, propertyID uint) ([]models.Image, error) {
-	// Implement the logic to retrieve all images associated with a specific property ID from the database
-	return nil, nil
+	query := r.qb.Select("id", "property_id", "path", "description", "main_image", "created_at", "updated_at").
+		From("images").
+		Where(squirrel.Eq{"property_id": propertyID}).
+		Where(squirrel.Expr("deleted_at IS NULL"))
+	
+	sql, args, err := query.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := r.db.QueryContext(ctx, sql, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var images []models.Image
+	for rows.Next() {
+		var image models.Image
+		err := rows.Scan(
+			&image.ID,
+			&image.PropertyID,
+			&image.Path,
+			&image.Description,
+			&image.MainImage,
+			&image.CreatedAt,
+			&image.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		images = append(images, image)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return images, nil
 }
 
 func (r *ImageRepository) GetMainImageByPropertyID(ctx context.Context, propertyID uint) (*models.Image, error) {
-	// Implement the logic to retrieve the main image for a specific property ID from the database
-	return nil, nil
+	query := r.qb.Select("id", "property_id", "path", "description", "main_image", "created_at", "updated_at").
+		From("images").
+		Where(squirrel.Eq{"property_id": propertyID}).
+		Where(squirrel.Eq{"main_image": true}).
+		Where(squirrel.Expr("deleted_at IS NULL"))
+
+	sql, args, err := query.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	var image models.Image
+	err = r.db.QueryRowContext(ctx, sql, args...).Scan(
+		&image.ID,
+		&image.PropertyID,
+		&image.Path,
+		&image.Description,
+		&image.MainImage,
+		&image.CreatedAt,
+		&image.UpdatedAt,
+	)
+	if err != nil {
+		if db.GetDBErrorNoRows(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &image, nil
+}
+
+func (r *ImageRepository) UpdateMainImageStatus(ctx context.Context, propertyID uint, imageID uint) error {
+    image, err := r.GetImageByID(ctx, imageID)
+    if err != nil {
+        return err
+    }
+    if image == nil || image.PropertyID != propertyID {
+        return errors.New("image does not belong to this property")
+    }
+	
+	query := r.qb.Update("images").
+        Set("main_image", false).
+        Where(squirrel.Eq{"property_id": propertyID}).
+        Where(squirrel.Eq{"main_image": true}).
+        Where(squirrel.Expr("deleted_at IS NULL"))
+
+    sql, args, err := query.ToSql()
+    if err != nil {
+        return err
+    }
+
+    _, err = r.db.ExecContext(ctx, sql, args...)
+    if err != nil {
+        return err
+    }
+
+    query = r.qb.Update("images").
+        Set("main_image", true).
+        Where(squirrel.Eq{"id": imageID}).
+        Where(squirrel.Eq{"property_id": propertyID}).
+        Where(squirrel.Expr("deleted_at IS NULL"))
+
+    sql, args, err = query.ToSql()
+    if err != nil {
+        return err
+    }
+
+    _, err = r.db.ExecContext(ctx, sql, args...)
+    return err
 }
 
 func (r *ImageRepository) UpdateImage(ctx context.Context, image *models.Image) (*models.Image, error) {
-	// Implement the logic to update an existing image in the database
-	return nil, nil
+	query := r.qb.Update("images").
+		Set("path", image.Path).
+		Set("description", image.Description).
+		Set("updated_at", time.Now()).
+		Where(squirrel.Eq{"id": image.ID}).
+		Where(squirrel.Expr("deleted_at IS NULL"))
+	
+	sql, args, err := query.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = r.db.ExecContext(ctx, sql, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	return image, nil
 }
 
 func (r *ImageRepository) DeleteImage(ctx context.Context, id uint) error {
-	// Implement the logic to delete an image by its ID from the database
+	query := r.qb.Update("images").
+		Set("deleted_at", time.Now()).
+		Where(squirrel.Eq{"id": id}).
+		Where(squirrel.Expr("deleted_at IS NULL"))
+		
+	sql, args, err := query.ToSql()
+	if err != nil {
+		return err
+	}
+
+	_, err = r.db.ExecContext(ctx, sql, args...)
+	if err != nil {
+		return err
+	}
 	return nil
 }

@@ -1,6 +1,5 @@
-DROP DATABASE IF EXISTS inmosoftDB;
-DROP TABLE IF EXISTS user_properties;
-DROP TABLE IF EXISTS tokens_verificacion;
-DROP TABLE IF EXISTS refresh_tokens;
-DROP TABLE IF EXISTS properties;
-DROP TABLE IF EXISTS users;
+DROP TABLE user_properties;
+DROP TABLE tokens_verificacion;
+DROP TABLE refresh_tokens;
+DROP TABLE properties;
+DROP TABLE users;

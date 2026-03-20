@@ -19,6 +19,8 @@ services:
       SMTP_PASS: ${SMTP_PASS}
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRATION_MINUTES: ${JWT_EXPIRATION_MINUTES}
+    volumes:
+      - property_images:/app/uploads
     networks:
       - ds_network
     restart: unless-stopped
@@ -58,7 +60,7 @@ services:
 
 volumes:
   mysql_data:
-
+  property_images:
 networks:
   ds_network:
     external: true
