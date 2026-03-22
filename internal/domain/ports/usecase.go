@@ -30,7 +30,8 @@ type AuthUseCase interface {
 }
 
 type ImageUseCase interface {
-	SaveImage(ctx context.Context, fileName string, image *models.Image) (*models.Image, error)
+	SaveImage(ctx context.Context, image *models.Image) (*models.Image, error)
+	GeneratePath(fileName string, propertyID uint) (diskPath string, urlPath string, err error)
 	GetImageByID(ctx context.Context, id uint) (*models.Image, error)
 	GetImagesByPropertyID(ctx context.Context, propertyID uint) ([]models.Image, error)
 	GetMainImageByPropertyID(ctx context.Context, propertyID uint) (*models.Image, error)

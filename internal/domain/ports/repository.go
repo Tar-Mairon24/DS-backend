@@ -50,4 +50,5 @@ type ImageRepository interface {
 	UpdateMainImageStatus(ctx context.Context, propertyID uint, imageID uint) error
 	UpdateImage(ctx context.Context, image *models.Image) (*models.Image, error)
 	DeleteImage(ctx context.Context, id uint) error
+	HardDeleteImage(ctx context.Context, id uint) error
 }

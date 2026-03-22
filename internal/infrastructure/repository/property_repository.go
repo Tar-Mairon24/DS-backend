@@ -205,7 +205,6 @@ func (r *PropertyRepository) Create(ctx context.Context, property *models.Proper
 	}
     property.ID = uint(id)
 	property.CreatedAt = time.Now()
-	property.UpdatedAt = time.Now()
     logrus.Infof("Property created successfully with ID: %d", property.ID)
     return property.ToResponse(), nil
 }

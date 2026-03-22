@@ -10,7 +10,7 @@ type User struct {
     Role        string     `json:"role"`
     Verified    bool       `json:"verified"`
     CreatedAt 	time.Time  `json:"created_at"`
-    UpdatedAt 	time.Time  `json:"updated_at"`
+    UpdatedAt 	*time.Time  `json:"updated_at,omitempty"`
     DeletedAt   *time.Time `json:"-"` // Exclude from JSON responses
     Properties  []Property `json:"properties,omitempty"`
     RefreshTokens []RefreshToken `json:"-"` // Exclude from JSON responses
@@ -23,7 +23,7 @@ type UserResponse struct {
     Role      string `json:"role"`
     Verified  bool   `json:"verified"`
     CreatedAt time.Time `json:"created_at"`
-    UpdatedAt time.Time `json:"updated_at"`
+    UpdatedAt *time.Time `json:"updated_at,omitempty"`
 }
 
 func (user *User) ToUserResponse() *UserResponse {

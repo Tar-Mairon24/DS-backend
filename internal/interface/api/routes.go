@@ -11,10 +11,10 @@ import (
 func setupAuthRoutes(rg *gin.RouterGroup, authHandler *handler.AuthHandler) {
 	auth := rg.Group("/auth")
 	{
-		auth.POST("/login", authHandler.UserLogin)   // POST /api/v1/auth/login
+		auth.POST("/login", authHandler.UserLogin)            // POST /api/v1/auth/login
 		auth.POST("/refresh-token", authHandler.RefreshToken) // POST /api/v1/auth/refresh-token
-		auth.POST("/logout/:id", authHandler.UserLogout) // POST /api/v1/auth/logout
-		auth.GET("/status", authHandler.GetStatus) // POST /api/v1/auth/status
+		auth.POST("/logout/:id", authHandler.UserLogout)      // POST /api/v1/auth/logout
+		auth.GET("/status", authHandler.GetStatus)            // POST /api/v1/auth/status
 	}
 }
 
@@ -22,7 +22,7 @@ func setupUserRoutes(rg *gin.RouterGroup, userHandler *handler.UserHandler, jwtS
 	users := rg.Group("/users")
 	users.Use(middleware.JWTAuthMiddleware(jwtService))
 	{
-		users.GET("", userHandler.GetUsers)         // GET /api/v1/users
+		users.GET("", userHandler.GetUsers)          // GET /api/v1/users
 		users.GET("/:id", userHandler.GetUserByID)   // GET /api/v1/users/:id
 		users.POST("", userHandler.CreateUser)       // POST /api/v1/users
 		users.PUT("/:id", userHandler.UpdateUser)    // PUT /api/v1/users
@@ -45,10 +45,31 @@ func setupPropertyRoutes(rg *gin.RouterGroup, propertyHandler *handler.PropertyH
 func setupEmailRoutes(rg *gin.RouterGroup, emailHandler *handler.EmailHandler) {
 	email := rg.Group("/email")
 	{
-		email.POST("/send-verification", emailHandler.SendVerificationEmail) // POST /api/v1/email/send-verification
-		email.POST("/verify", emailHandler.VerifyEmail) // POST /api/v1/email/verify
+		email.POST("/send-verification", emailHandler.SendVerificationEmail)    // POST /api/v1/email/send-verification
+		email.POST("/verify", emailHandler.VerifyEmail)                         // POST /api/v1/email/verify
 		email.POST("/resend-verification", emailHandler.ResendVerificationCode) // POST /api/v1/email/resend-verification
 	}
+}
+
+func setupImageRoutes(rg *gin.RouterGroup, imageHandler *handler.ImageHandler, jwtService ports.JWTService, middleware middleware.AuthMiddlewareInterface) {
+	propertyImages := rg.Group("properties/:id/images")
+	propertyImages.Use(middleware.JWTAuthMiddleware(jwtService)) 
+	{
+		propertyImages.POST("", imageHandler.SaveImage)                            // POST /api/v1/properties/:id/images
+		propertyImages.GET("", imageHandler.GetImagesByPropertyID)                 // GET /api/v1/properties/:id/images
+		propertyImages.GET("/main", imageHandler.GetMainImageByPropertyID)         // GET /api/v1/properties/:id/images/main
+		propertyImages.PATCH("/:imageId/main", imageHandler.UpdateMainImageStatus) // PATCH /api/v1/properties/:id/images/:imageId/main
+	}
+
+	images := rg.Group("images")
+	images.Use(middleware.JWTAuthMiddleware(jwtService))
+	{
+		images.GET("/:id", imageHandler.GetImageByID)   // GET /api/v1/images/:id
+		images.PUT("/:id", imageHandler.UpdateImage)    // PUT /api/v1/images/:id
+		images.DELETE("/:id", imageHandler.DeleteImage) // DELETE /api/v1/images/:id
+	}
+
+	rg.Group("/uploads").Use(middleware.JWTAuthMiddleware(jwtService)).StaticFS("/", gin.Dir("/app/uploads", false))
 }
 
 func setupHealthRoutes(rg *gin.RouterGroup, healthHandler *handler.HealthHandler) {

@@ -23,35 +23,29 @@ func NewImageUseCase(imageRepo ports.ImageRepository) ports.ImageUseCase {
 	}
 }
 
-func (i *ImageUseCase) SaveImage(ctx context.Context, fileName string, image *models.Image) (*models.Image, error) {
-    if fileName == "" {
-        return nil, errors.New("file name cannot be empty")
-    }
+func (i *ImageUseCase) SaveImage(ctx context.Context, image *models.Image) (*models.Image, error) {
     if image == nil {
         return nil, errors.New("image cannot be nil")
     }
+    return i.imageRepo.SaveImage(ctx, image)
+}
 
+func (i *ImageUseCase) GeneratePath(fileName string, propertyID uint) (diskPath string, urlPath string, err error) {
     ext := filepath.Ext(fileName)
     allowedExts := map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".gif": true}
     if !allowedExts[ext] {
-        return nil, errors.New("unsupported file type")
+        return "", "", errors.New("unsupported file type")
     }
 
-    propertyID := fmt.Sprintf("%d", image.PropertyID)
-    newFileName := uuid.New().String() + ext
-
-    propertyDir := filepath.Join("/app/uploads/properties", propertyID)
+    propertyDir := filepath.Join("/app/uploads/properties", fmt.Sprintf("%d", propertyID))
     if err := os.MkdirAll(propertyDir, os.ModePerm); err != nil {
-        return nil, errors.New("could not create upload directory")
+        return "", "", errors.New("could not create upload directory")
     }
 
-    image.Path = fmt.Sprintf("/uploads/properties/%s/%s", propertyID, newFileName)
-
-    savedImage, err := i.imageRepo.SaveImage(ctx, image)
-    if err != nil {
-        return nil, err
-    }
-    return savedImage, nil
+    newFileName := uuid.New().String() + ext
+    diskPath = filepath.Join(propertyDir, newFileName)
+    urlPath = fmt.Sprintf("/uploads/properties/%d/%s", propertyID, newFileName)
+    return diskPath, urlPath, nil
 }
 
 func (i *ImageUseCase) GetImageByID(ctx context.Context, id uint) (*models.Image, error) {
@@ -75,5 +69,28 @@ func (i *ImageUseCase) UpdateImage(ctx context.Context, image *models.Image) (*m
 }
 
 func (i *ImageUseCase) DeleteImage(ctx context.Context, id uint) error {
-	return i.imageRepo.DeleteImage(ctx, id)
+    image, err := i.imageRepo.GetImageByID(ctx, id)
+    if err != nil {
+        return err
+    }
+    if image == nil {
+        return errors.New("image not found")
+    }
+
+    if err := i.imageRepo.DeleteImage(ctx, id); err != nil {
+        return err
+    }
+
+    if image.MainImage {
+        images, err := i.imageRepo.GetImagesByPropertyID(ctx, image.PropertyID)
+        if err != nil {
+            return err
+        }
+        if len(images) > 0 {
+            if err := i.imageRepo.UpdateMainImageStatus(ctx, image.PropertyID, images[0].ID); err != nil {
+                return err
+            }
+        }
+    }
+	return nil
 }

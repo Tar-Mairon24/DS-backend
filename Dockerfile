@@ -25,6 +25,8 @@ COPY --from=builder /app/main .
 
 RUN chown appuser:appuser main
 
+RUN mkdir -p /app/uploads && chown appuser:appuser /app/uploads
+
 USER appuser
 
 EXPOSE 8080

@@ -9,6 +9,11 @@ type Image struct {
 	Description string    `json:"description"`
 	MainImage   bool      `json:"main_image"`
 	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-	DeletedAt   time.Time `json:"deleted_at"`
+	UpdatedAt   *time.Time `json:"updated_at,omitempty"`
+	DeletedAt   *time.Time `json:"-"`
+}
+
+type SaveImageRequest struct {
+	Description string `form:"description"`
+	MainImage   bool   `form:"main_image"`
 }

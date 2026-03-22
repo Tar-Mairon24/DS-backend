@@ -21,19 +21,22 @@ type Container struct {
 	propertyRepo ports.PropertyRepository
 	tokenRepo    ports.TokenRepository
 	emailRepo    ports.EmailRepository
+	imageRepo    ports.ImageRepository
 
 	userUsecase     ports.UserUseCase
 	propertyUsecase ports.PropertyUseCase
 	authUsecase     ports.AuthUseCase
+	imageUsecase    ports.ImageUseCase
 
-	jwtService ports.JWTService
+	jwtService   ports.JWTService
 	emailService ports.EmailService
 
 	userHandler     *handler.UserHandler
 	propertyHandler *handler.PropertyHandler
 	healthHandler   *handler.HealthHandler
 	authHandler     *handler.AuthHandler
-	emailHandler   	*handler.EmailHandler
+	emailHandler    *handler.EmailHandler
+	imageHandler    *handler.ImageHandler
 
 	hashing        middleware.HashingInterface
 	authMiddleware middleware.AuthMiddlewareInterface
@@ -60,7 +63,7 @@ func NewContainer() *Container {
 	container.propertyRepo = repository.NewPropertyRepository(container.SqlDB)
 	container.tokenRepo = repository.NewTokenRepository(container.SqlDB)
 	container.emailRepo = repository.NewEmailRepository(container.SqlDB)
-
+	container.imageRepo = repository.NewImageRepository(container.SqlDB)
 	// services
 	container.jwtService = service.NewJWTService(container.userRepo)
 	container.emailService = service.NewEmailService(container.emailRepo)
@@ -69,12 +72,14 @@ func NewContainer() *Container {
 	container.userUsecase = usecase.NewUserUseCase(container.userRepo, container.hashing)
 	container.propertyUsecase = usecase.NewPropertyUseCase(container.propertyRepo)
 	container.authUsecase = usecase.NewAuthUseCase(container.userRepo, container.tokenRepo, container.jwtService, container.hashing, container.authMiddleware)
+	container.imageUsecase = usecase.NewImageUseCase(container.imageRepo)
 
 	// handlers
 	container.userHandler = handler.NewUserHandler(container.userUsecase)
 	container.propertyHandler = handler.NewPropertyHandler(container.propertyUsecase)
 	container.authHandler = handler.NewAuthHandler(container.jwtService, container.authUsecase)
 	container.emailHandler = handler.NewEmailHandler(container.emailService)
+	container.imageHandler = handler.NewImageHandler(container.imageUsecase)
 	container.healthHandler = handler.NewHealthHandler()
 
 	logrus.Info("DI container initialized successfully")
@@ -86,6 +91,7 @@ type Handlers struct {
 	UserHandler     *handler.UserHandler
 	HealthHandler   *handler.HealthHandler
 	AuthHandler     *handler.AuthHandler
+	ImageHandler    *handler.ImageHandler
 	EmailHandler    *handler.EmailHandler
 }
 
@@ -96,17 +102,18 @@ func (c *Container) GetHandlers() *Handlers {
 		HealthHandler:   c.healthHandler,
 		AuthHandler:     c.authHandler,
 		EmailHandler:    c.emailHandler,
+		ImageHandler:    c.imageHandler,
 	}
 }
 
 type Services struct {
-	JwtService ports.JWTService
+	JwtService   ports.JWTService
 	EmailService ports.EmailService
 }
 
 func (c *Container) GetServices() Services {
 	return Services{
-		JwtService: c.jwtService,
+		JwtService:   c.jwtService,
 		EmailService: c.emailService,
 	}
 }

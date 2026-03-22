@@ -38,7 +38,7 @@ type Property struct {
     TransactionType TransactionType    `json:"transaction_type"`
     Status          PropertyStatus     `json:"status"`
     CreatedAt       time.Time          `json:"created_at"`
-    UpdatedAt       time.Time          `json:"updated_at"`
+    UpdatedAt       *time.Time         `json:"updated_at,omitempty"`
     DeletedAt       *time.Time         `json:"-"`
 	Owner           *User              `json:"owner,omitempty"`
     Users           []User             `json:"users,omitempty"`
@@ -70,7 +70,7 @@ type PropertyResponse struct {
     TransactionType TransactionType `json:"transaction_type"`
     Status          PropertyStatus  `json:"status"`
     CreatedAt       time.Time       `json:"created_at"`
-    UpdatedAt       time.Time       `json:"updated_at"`
+    UpdatedAt       *time.Time       `json:"updated_at,omitempty"`
     Agent          	*UserResponse   `json:"agent,omitempty"` // Agent handling the property
 }
 
