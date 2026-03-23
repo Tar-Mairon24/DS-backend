@@ -25,10 +25,15 @@ func NewPropertyRepository(db *sql.DB) ports.PropertyRepository {
 	}
 }
 
-func (r *PropertyRepository) GetAll(ctx context.Context, ) ([]models.PropertyResponse, error) {
-	query := r.qb.Select("*").
-		From("properties").
-		Where(squirrel.Expr("deleted_at IS NULL"))
+func (r *PropertyRepository) GetAll(ctx context.Context, ) ([]models.PropertyCard, error) {
+	query := r.qb.Select(
+		"p.id", "p.title", "p.price", "p.bedrooms", "p.bathrooms",
+		"p.construction_m2", "p.city", "p.neighborhood",
+		"p.property_type", "p.transaction_type", "p.status", "i.path", "p.created_at",
+		).
+		From("properties p").
+		LeftJoin("images i ON i.property_id = p.id AND i.main_image = 1 AND i.deleted_at IS NULL").
+		Where(squirrel.Expr("p.deleted_at IS NULL"))
 
 	sqlStr, args, err := query.ToSql()
 	if err != nil {
@@ -46,58 +51,39 @@ func (r *PropertyRepository) GetAll(ctx context.Context, ) ([]models.PropertyRes
 		}
 	}()
 
-	var properties []models.PropertyResponse
+	var properties []models.PropertyCard
 	for rows.Next() {
-		var property models.Property
+		var property models.PropertyCard
 
         if err := rows.Scan(
             &property.ID,
             &property.Title,
-            &property.ListingDate,
-            &property.Address,
-            &property.Neighborhood,
-            &property.City,
-            &property.Zone,
-            &property.Reference,
-            &property.Price,
-            &property.ConstructionM2,
-            &property.LandM2,
-            &property.IsOccupied,
-            &property.IsFurnished,
-            &property.Floors,
-            &property.Bedrooms,
-            &property.Bathrooms,
-            &property.GarageSize,
-            &property.GardenM2,
-            &property.GasTypes,
-            &property.Amenities,
-            &property.Extras,
-            &property.Utilities,
-            &property.Notes,
-            &property.OwnerID,
-            &property.UserID,
-            &property.PropertyType,
-            &property.TransactionType,
-            &property.Status,
-            &property.CreatedAt,
-            &property.UpdatedAt,
-            &property.DeletedAt,
+			&property.Price,
+			&property.Bedrooms,
+			&property.Bathrooms,
+			&property.ConstructionM2,
+			&property.City,
+			&property.Neighborhood,
+			&property.PropertyType,
+			&property.TransactionType,
+			&property.Status,
+			&property.MainImagePath,
+			&property.CreatedAt,
 		); err != nil {
 			logrus.WithError(err).Error("Failed to scan property row")
 			return nil, err
 		}
 
-		properties = append(properties, *property.ToResponse())
-
-		if err := rows.Err(); err != nil {
-			logrus.WithError(err).Error("Error occurred while iterating over property rows")
-			return nil, err
-		}
+		properties = append(properties, property)
+	}
+	if err := rows.Err(); err != nil {
+		logrus.WithError(err).Error("Error occurred while iterating over property rows")
+		return nil, err
 	}
 
 	if len(properties) == 0 {
 		logrus.Warn("No properties found in the database")
-		return []models.PropertyResponse{}, nil
+		return []models.PropertyCard{}, nil
 	}
 
 	return properties, nil
@@ -121,7 +107,6 @@ func (r *PropertyRepository) GetByID(ctx context.Context, id uint) (*models.Prop
 	err = r.db.QueryRowContext(ctx, sqlStr, args...).Scan(
 		&property.ID,
 		&property.Title,
-		&property.ListingDate,
 		&property.Address,
 		&property.Neighborhood,
 		&property.City,
@@ -149,7 +134,6 @@ func (r *PropertyRepository) GetByID(ctx context.Context, id uint) (*models.Prop
 		&property.Status,
 		&property.CreatedAt,
 		&property.UpdatedAt,
-		&property.DeletedAt,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -166,20 +150,20 @@ func (r *PropertyRepository) GetByID(ctx context.Context, id uint) (*models.Prop
 func (r *PropertyRepository) Create(ctx context.Context, property *models.Property) (*models.PropertyResponse, error) {
     query := r.qb.Insert("properties").
         Columns(
-            "title", "listing_date", "address", "neighborhood", "city",
+            "title", "address", "neighborhood", "city",
             "zone", "reference", "price", "construction_m2", "land_m2",
             "is_occupied", "is_furnished", "floors", "bedrooms", "bathrooms",
             "garage_size", "garden_m2", "gas_types", "amenities", "extras",
             "utilities", "notes", "owner_id", "user_id", "property_type",
-            "transaction_type", "status", "created_at", "updated_at",
+            "transaction_type", "status",
         ).
         Values(
-            property.Title, property.ListingDate, property.Address, property.Neighborhood, property.City,
+            property.Title, property.Address, property.Neighborhood, property.City,
             property.Zone, property.Reference, property.Price, property.ConstructionM2, property.LandM2,
             property.IsOccupied, property.IsFurnished, property.Floors, property.Bedrooms, property.Bathrooms,
             property.GarageSize, property.GardenM2, property.GasTypes, property.Amenities, property.Extras,
             property.Utilities, property.Notes, property.OwnerID, property.UserID, property.PropertyType,
-            property.TransactionType, property.Status, time.Now(), time.Now(),
+            property.TransactionType, property.Status,
         )
 
     sqlStr, args, err := query.ToSql()
@@ -212,7 +196,6 @@ func (r *PropertyRepository) Create(ctx context.Context, property *models.Proper
 func (r *PropertyRepository) Update(ctx context.Context, property *models.Property) (*models.PropertyResponse, error) {
 	query := r.qb.Update("properties").
 		Set("title", property.Title).
-		Set("listing_date", property.ListingDate).
 		Set("address", property.Address).
 		Set("neighborhood", property.Neighborhood).
 		Set("city", property.City).
@@ -238,7 +221,6 @@ func (r *PropertyRepository) Update(ctx context.Context, property *models.Proper
 		Set("property_type", property.PropertyType).
 		Set("transaction_type", property.TransactionType).
 		Set("status", property.Status).
-		Set("updated_at", squirrel.Expr("NOW()")).
 		Where(squirrel.Eq{"id": property.ID}).
 		Where(squirrel.Expr("deleted_at IS NULL"))
 

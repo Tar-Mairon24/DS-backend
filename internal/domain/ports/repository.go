@@ -17,7 +17,7 @@ type UserRepository interface {
 }
 
 type PropertyRepository interface {
-	GetAll(ctx context.Context) ([]models.PropertyResponse, error)
+	GetAll(ctx context.Context) ([]models.PropertyCard, error)
 	GetByID(ctx context.Context, id uint) (*models.PropertyResponse, error)
 	Create(ctx context.Context, property *models.Property) (*models.PropertyResponse, error)
 	Update(ctx context.Context, property *models.Property) (*models.PropertyResponse, error)

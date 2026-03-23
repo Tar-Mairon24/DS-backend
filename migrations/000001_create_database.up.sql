@@ -18,7 +18,6 @@ CREATE TABLE users (
 CREATE TABLE properties (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
-    listing_date TIMESTAMP NULL,
     address VARCHAR(500) NOT NULL,
     neighborhood VARCHAR(255),
     city VARCHAR(255) NOT NULL,

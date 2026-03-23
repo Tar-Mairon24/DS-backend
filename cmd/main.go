@@ -13,7 +13,7 @@ import (
 
 func main() {
 	if err := godotenv.Load(); err != nil {
-		logrus.Warn("No .env file found, using environment variables or defaults")
+		logrus.Warnf("No .env file found, using environment variables or defaults")
 	}
 
 	logrus.SetFormatter(&logrus.TextFormatter{
@@ -28,7 +28,7 @@ func main() {
 	timezone := os.Getenv("SERVER_TIMEZONE")
 	if timezone == "" {
 		timezone = "UTC"
-		logrus.Warn("SERVER_TIMEZONE not set, defaulting to UTC")
+		logrus.Warnf("SERVER_TIMEZONE not set, defaulting to UTC")
 	}
 	loc, err := time.LoadLocation(timezone)
 	logrus.Infof("Setting server timezone to %s", timezone)

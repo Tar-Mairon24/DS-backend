@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -68,4 +69,24 @@ func (m *authMiddleware) GenerateRefreshToken() (string, string, error) {
 	hash := sha256.Sum256([]byte(token))
 	id := hex.EncodeToString(hash[:])
 	return token, id, nil
+}
+
+type SafeFS struct {
+    Root http.Dir
+}
+
+func (fs SafeFS) Open(name string) (http.File, error) {
+    f, err := fs.Root.Open(name)
+    if err != nil {
+        return nil, err
+    }
+
+    stat, err := f.Stat()
+    if err != nil {
+        return nil, err
+    }
+    if stat.IsDir() {
+        return nil, os.ErrNotExist
+    }
+    return f, nil
 }

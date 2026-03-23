@@ -51,8 +51,8 @@ func (r *ImageRepository) SaveImage(ctx context.Context, image *models.Image) (*
     }
 
     insertQuery := r.qb.Insert("images").
-        Columns("property_id", "path", "description", "main_image", "created_at").
-        Values(image.PropertyID, image.Path, image.Description, image.MainImage, time.Now())
+        Columns("property_id", "path", "description", "main_image").
+        Values(image.PropertyID, image.Path, image.Description, image.MainImage)
 
     sql, args, err := insertQuery.ToSql()
     if err != nil {
@@ -230,7 +230,6 @@ func (r *ImageRepository) UpdateImage(ctx context.Context, image *models.Image) 
 	query := r.qb.Update("images").
 		Set("path", image.Path).
 		Set("description", image.Description).
-		Set("updated_at", time.Now()).
 		Where(squirrel.Eq{"id": image.ID}).
 		Where(squirrel.Expr("deleted_at IS NULL"))
 	

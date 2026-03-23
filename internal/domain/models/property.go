@@ -11,7 +11,6 @@ import (
 type Property struct {
     ID              uint               `json:"id"`
     Title           string             `json:"title"`
-    ListingDate     *time.Time         `json:"listing_date"`
     Address         string             `json:"address"`
     Neighborhood    string             `json:"neighborhood"`
     City            string             `json:"city"`
@@ -87,6 +86,7 @@ type PropertyCard struct {
 	PropertyType    PropertyType    `json:"property_type"`
     TransactionType TransactionType `json:"transaction_type"`
     Status          PropertyStatus  `json:"status"`
+    MainImagePath   *string         `json:"main_image_path"`
     CreatedAt       time.Time       `json:"created_at"`
 }
 

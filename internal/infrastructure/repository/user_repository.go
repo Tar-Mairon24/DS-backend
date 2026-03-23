@@ -82,8 +82,8 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.
 
 func (r *UserRepository) Create(ctx context.Context, user *models.User) (*models.UserResponse, error) {
 	query := r.qb.Insert("users").
-		Columns("username", "email", "password", "role", "created_at", "updated_at").
-		Values(user.Username, user.Email, user.Password, user.Role, time.Now(), time.Now())
+		Columns("username", "email", "password", "role").
+		Values(user.Username, user.Email, user.Password, user.Role)
 
 	sql, args, err := query.ToSql()
 	if err != nil {
@@ -194,7 +194,6 @@ func (r *UserRepository) Update(ctx context.Context, user *models.User) (*models
 		Set("username", user.Username).
 		Set("email", user.Email).
 		Set("role", user.Role).
-		Set("updated_at", time.Now()).
 		Where(squirrel.Eq{"id": user.ID}).
 		Where(squirrel.Expr("deleted_at IS NULL"))
 

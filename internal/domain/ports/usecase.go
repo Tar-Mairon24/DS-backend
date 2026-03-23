@@ -15,7 +15,7 @@ type UserUseCase interface {
 }
 
 type PropertyUseCase interface {
-	GetAllProperties(ctx context.Context) ([]models.PropertyResponse, error)
+	GetAllProperties(ctx context.Context) ([]models.PropertyCard, error)
 	GetPropertyByID(ctx context.Context, id uint) (*models.PropertyResponse, error)
 	CreateProperty(ctx context.Context, property *models.Property) (*models.PropertyResponse, error)
 	UpdateProperty(ctx context.Context, property *models.Property) (*models.PropertyResponse, error)

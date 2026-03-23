@@ -26,6 +26,7 @@ func SetupRouter(handlers *di.Handlers, services di.Services, middleware di.Midd
 		setupUserRoutes(v1, handlers.UserHandler, services.JwtService, middleware.AuthMiddleware)
 		setupPropertyRoutes(v1, handlers.PropertyHandler, services.JwtService, middleware.AuthMiddleware)
 		setupEmailRoutes(v1, handlers.EmailHandler)
+		setupUploadServerRoutes(r, services.JwtService, middleware.AuthMiddleware)
 		setupImageRoutes(v1, handlers.ImageHandler, services.JwtService, middleware.AuthMiddleware)
 	}
 

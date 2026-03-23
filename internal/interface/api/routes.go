@@ -1,6 +1,12 @@
 package api
 
 import (
+	"io"
+	"net/http"
+	"path/filepath"
+	"strings"
+	"time"
+
 	"github.com/gin-gonic/gin"
 
 	"ds-backend/internal/domain/ports"
@@ -68,8 +74,31 @@ func setupImageRoutes(rg *gin.RouterGroup, imageHandler *handler.ImageHandler, j
 		images.PUT("/:id", imageHandler.UpdateImage)    // PUT /api/v1/images/:id
 		images.DELETE("/:id", imageHandler.DeleteImage) // DELETE /api/v1/images/:id
 	}
+}
 
-	rg.Group("/uploads").Use(middleware.JWTAuthMiddleware(jwtService)).StaticFS("/", gin.Dir("/app/uploads", false))
+func setupUploadServerRoutes(router *gin.Engine, jwtService ports.JWTService, authMiddleware middleware.AuthMiddlewareInterface) {
+    uploads := router.Group("/uploads")
+    uploads.Use(authMiddleware.JWTAuthMiddleware(jwtService))
+    {
+        uploads.GET("/*filepath", func(c *gin.Context) {
+            filePath := filepath.Clean(c.Param("filepath"))
+
+            if strings.Contains(filePath, "..") {
+                c.JSON(http.StatusForbidden, gin.H{"error": "invalid path"})
+                return
+            }
+
+            fs := middleware.SafeFS{Root: http.Dir("/app/uploads")}
+            f, err := fs.Open(filePath)
+            if err != nil {
+                c.JSON(http.StatusNotFound, gin.H{"error": "file not found"})
+                return
+            }
+            defer f.Close()
+
+            http.ServeContent(c.Writer, c.Request, filePath, time.Time{}, f.(io.ReadSeeker))
+        })
+    }
 }
 
 func setupHealthRoutes(rg *gin.RouterGroup, healthHandler *handler.HealthHandler) {

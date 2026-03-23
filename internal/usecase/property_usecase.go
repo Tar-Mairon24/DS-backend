@@ -20,7 +20,7 @@ func NewPropertyUseCase(propertyRepo ports.PropertyRepository) ports.PropertyUse
 	}
 }
 
-func (p *PropertyUseCase) GetAllProperties(ctx context.Context, ) ([]models.PropertyResponse, error) {
+func (p *PropertyUseCase) GetAllProperties(ctx context.Context, ) ([]models.PropertyCard, error) {
 	properties, err := p.propertyRepo.GetAll(ctx)
 	if err != nil {
 		return nil, err
