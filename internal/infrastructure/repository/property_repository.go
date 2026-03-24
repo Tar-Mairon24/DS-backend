@@ -90,7 +90,7 @@ func (r *PropertyRepository) GetAll(ctx context.Context, ) ([]models.PropertyCar
 }
 
 func (r *PropertyRepository) GetByID(ctx context.Context, id uint) (*models.PropertyResponse, error) {
-	query := r.qb.Select("*").
+	query := r.qb.Select("id, title, address, neighborhood, city, zone, reference, price, construction_m2, land_m2, is_occupied, is_furnished, floors, bedrooms, bathrooms, garage_size, garden_m2, gas_types, amenities, extras, utilities, notes, owner_id, user_id, property_type, transaction_type, status, created_at, updated_at").
 		From("properties").
 		Where(squirrel.And{
 			squirrel.Eq{"id": id},

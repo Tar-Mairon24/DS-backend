@@ -86,7 +86,6 @@ func (j *JWTService) ValidateToken(tokenString string) (*models.JWTClaims, error
 	}
 
 	if claims, ok := parsedToken.Claims.(*models.JWTClaims); ok && parsedToken.Valid {
-		logrus.Infof("Successfully validated JWT token for user %d", claims.ID)
 		return claims, nil
 	}
 

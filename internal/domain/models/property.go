@@ -111,6 +111,9 @@ type PropertyType string
 const (
 	TypeHouse     	PropertyType = "Casa"
 	TypeApartment 	PropertyType = "Apartamento"
+    TypeLoft      	PropertyType = "Loft"
+    TypeCondo      	PropertyType = "Condominio"
+    TypeLocal      	PropertyType = "Local"
 	TypeLand      	PropertyType = "Terreno"
 	TypeCommercial 	PropertyType = "Comercial"
 	TypeStorehouse 	PropertyType = "Almacén"
