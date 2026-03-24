@@ -93,30 +93,30 @@ type PropertyCard struct {
 type TransactionType string
 
 const (
-    TransactionSale   TransactionType = "sale"
-    TransactionRental TransactionType = "rental"
+    TransactionSale   TransactionType = "Venta"
+    TransactionRental TransactionType = "Renta"
 )
 
 type PropertyStatus string
 
 const (
-    StatusAvailable PropertyStatus = "available"
-    StatusSold      PropertyStatus = "sold"
-    StatusRented    PropertyStatus = "rented"
-    StatusReserved  PropertyStatus = "reserved"
+    StatusAvailable PropertyStatus = "Disponible"
+    StatusSold      PropertyStatus = "Vendido"
+    StatusRented    PropertyStatus = "Alquilado"
+    StatusReserved  PropertyStatus = "Reservado"
 )
 
 type PropertyType string 
 
 const (
-	TypeHouse     	PropertyType = "house"
-	TypeApartment 	PropertyType = "apartment"
-	TypeLand      	PropertyType = "land"
-	TypeCommercial 	PropertyType = "commercial"
-	TypeStorehouse 	PropertyType = "storehouse"
-	TypeOffice     	PropertyType = "office"
-	TypeIndustrial  PropertyType = "industrial"
-	TypeOther      	PropertyType = "other"
+	TypeHouse     	PropertyType = "Casa"
+	TypeApartment 	PropertyType = "Apartamento"
+	TypeLand      	PropertyType = "Terreno"
+	TypeCommercial 	PropertyType = "Comercial"
+	TypeStorehouse 	PropertyType = "Almacén"
+	TypeOffice     	PropertyType = "Oficina"
+	TypeIndustrial  PropertyType = "Industrial"
+	TypeOther      	PropertyType = "Otro"
 )
 
 type StringArray []string

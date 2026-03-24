@@ -24,6 +24,7 @@ func NewImageHandler(imageUseCase ports.ImageUseCase) *ImageHandler {
 }
 
 func (h *ImageHandler) SaveImage(c *gin.Context) {
+	logrus.Info("SaveImage endpoint called")
 	propertyID, err := parseUintParam(c, "id")
     if err != nil {
 		logrus.Errorf("Invalid property ID: %v", err)
@@ -71,6 +72,7 @@ func (h *ImageHandler) SaveImage(c *gin.Context) {
     }
 
     c.JSON(http.StatusCreated, gin.H{"data": savedImage})
+	logrus.Infof("Image saved successfully with ID: %d for property ID: %d", savedImage.ID, propertyID)
 }
 
 func (h *ImageHandler) GetImageByID(c *gin.Context) {

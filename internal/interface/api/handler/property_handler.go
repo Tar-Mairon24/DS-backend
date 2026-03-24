@@ -81,29 +81,37 @@ func (h *PropertyHandler) GetPropertyByID(c *gin.Context) {
 }
 
 func (h *PropertyHandler) CreateProperty(c *gin.Context) {
-	logrus.Info("CreateProperty endpoint called")
+    logrus.Info("CreateProperty endpoint called")
 
-	var property models.Property
-	if err := c.ShouldBindJSON(&property); err != nil {
-		logrus.WithError(err).Error("Invalid request body")
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   "Invalid request body",
-			"message": "Please provide valid property data",
-		})
+    var property models.Property
+    if err := c.ShouldBindJSON(&property); err != nil {
+        logrus.WithError(err).Error("Invalid request body")
+        c.JSON(http.StatusBadRequest, gin.H{
+            "error":   "Invalid request body",
+            "message": "Please provide valid property data",
+        })
+        return
+    }
+
+    userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
+	property.UserID = userID.(uint)
+	property.OwnerID = userID.(uint)  // Add this line
 
-	newProperty, err := h.propertyUsecase.CreateProperty(c.Request.Context(), &property)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error":   "Failed to create property",
-			"message": err.Error(),
-		})
-		return
-	}
+    newProperty, err := h.propertyUsecase.CreateProperty(c.Request.Context(), &property)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{
+            "error":   "Failed to create property",
+            "message": err.Error(),
+        })
+        return
+    }
 
-	logrus.Infof("Property created successfully with ID: %d", newProperty.ID)
-	c.JSON(http.StatusCreated, newProperty)
+    logrus.Infof("Property created successfully with ID: %d", newProperty.ID)
+    c.JSON(http.StatusCreated, newProperty)
 }
 
 func (h *PropertyHandler) UpdateProperty(c *gin.Context) {

@@ -70,7 +70,7 @@ func NewContainer() *Container {
 
 	// usecases
 	container.userUsecase = usecase.NewUserUseCase(container.userRepo, container.hashing)
-	container.propertyUsecase = usecase.NewPropertyUseCase(container.propertyRepo)
+	container.propertyUsecase = usecase.NewPropertyUseCase(container.propertyRepo, container.imageRepo)
 	container.authUsecase = usecase.NewAuthUseCase(container.userRepo, container.tokenRepo, container.jwtService, container.hashing, container.authMiddleware)
 	container.imageUsecase = usecase.NewImageUseCase(container.imageRepo)
 

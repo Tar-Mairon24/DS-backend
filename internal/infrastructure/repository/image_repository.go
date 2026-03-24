@@ -226,6 +226,24 @@ func (r *ImageRepository) UpdateMainImageStatus(ctx context.Context, propertyID 
     return err
 }
 
+func (r *ImageRepository) DeleteImagesByPropertyID(ctx context.Context, propertyID uint) error {
+	query := r.qb.Update("images").
+		Set("deleted_at", time.Now()).
+		Where(squirrel.Eq{"property_id": propertyID}).
+		Where(squirrel.Expr("deleted_at IS NULL"))
+	
+	sql, args, err := query.ToSql()
+	if err != nil {
+		return err
+	}
+
+	_, err = r.db.ExecContext(ctx, sql, args...)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (r *ImageRepository) UpdateImage(ctx context.Context, image *models.Image) (*models.Image, error) {
 	query := r.qb.Update("images").
 		Set("path", image.Path).

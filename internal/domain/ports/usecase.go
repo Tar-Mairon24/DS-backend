@@ -24,7 +24,7 @@ type PropertyUseCase interface {
 
 type AuthUseCase interface {
 	Login(ctx context.Context, email string, password string) (*models.LoginResponse, error)
-	Logout(ctx context.Context, id uint) error
+	Logout(ctx context.Context, refreshToken string) error
 	RefreshToken(ctx context.Context, data models.RefreshTokenData) (*models.RefreshTokenData, error)
 	GetStatus(ctx context.Context, userID uint, refreshToken string) error
 }

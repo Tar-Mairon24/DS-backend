@@ -26,11 +26,6 @@ type LoginData struct {
 	Password string `json:"password"`
 }
 
-// LogoutData represents the data required for user logout.
-type LogoutData struct {
-	UserID uint `json:"user_id" binding:"required"`
-}
-
 // RefreshToken represents a refresh token used for obtaining new JWT tokens.
 type RefreshToken struct {
 	ID        string    `json:"id"`

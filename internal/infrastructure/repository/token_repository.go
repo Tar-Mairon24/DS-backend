@@ -69,27 +69,27 @@ func (r *TokenRepository) DeleteToken(ctx context.Context, tokenID string) error
 	return nil
 }
 
-func (r *TokenRepository) GetTokenIDByUserID(ctx context.Context, userID uint) (string, error) {
-	query := r.qb.Select("id").
-		From("refresh_tokens").
-		Where(squirrel.Eq{"user_id": userID})
+func (r *TokenRepository) GetTokenByToken(ctx context.Context, token string) (*models.RefreshToken, error) {
+    query := r.qb.Select("id", "user_id", "token", "expires_at", "created_at").
+        From("refresh_tokens").
+        Where(squirrel.Eq{"token": token})
 
-	sql, args, err := query.ToSql()
+    sql, args, err := query.ToSql()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	var refreshTokenID string
-	err = r.db.QueryRowContext(ctx, sql, args...).Scan(&refreshTokenID)
+	var tokenResponse models.RefreshToken
+	err = r.db.QueryRowContext(ctx, sql, args...).Scan(&tokenResponse.ID, &tokenResponse.UserID, &tokenResponse.Token, &tokenResponse.ExpiresAt, &tokenResponse.CreatedAt)
 	if err != nil {
 		if db.GetDBErrorNoRows(err) {
-			logrus.Warn("No refresh token found with the provided user ID")
-			return "", errors.New("no token found")
+			logrus.Warn("No refresh token found with the provided token")
+			return nil, errors.New("no token found")
 		}
-		return "", err
+		return nil, err
 	}
 
-	return refreshTokenID, nil
+	return &tokenResponse, nil
 }
 
 func (r *TokenRepository) GetTokenByUserID(ctx context.Context, userID uint) (*models.RefreshToken, error) {
@@ -103,8 +103,8 @@ func (r *TokenRepository) GetTokenByUserID(ctx context.Context, userID uint) (*m
 		return nil, err
 	}
 
-	var token models.RefreshToken
-	err = r.db.QueryRowContext(ctx, sql, args...).Scan(&token.ID, &token.UserID, &token.Token, &token.ExpiresAt, &token.CreatedAt)
+	var tokenResponse models.RefreshToken
+	err = r.db.QueryRowContext(ctx, sql, args...).Scan(&tokenResponse.ID, &tokenResponse.UserID, &tokenResponse.Token, &tokenResponse.ExpiresAt, &tokenResponse.CreatedAt)
 	if err != nil {
 		if db.GetDBErrorNoRows(err) {
 			logrus.Warn("No refresh token found for the provided user ID")
@@ -114,5 +114,25 @@ func (r *TokenRepository) GetTokenByUserID(ctx context.Context, userID uint) (*m
 		return nil, err
 	}
 
-	return &token, nil
+	return &tokenResponse, nil
+}
+
+func (r *TokenRepository) DeleteExpiredTokensByUserID(ctx context.Context, userID uint) error {
+	query := r.qb.Delete("refresh_tokens").
+        Where(squirrel.Eq{"user_id": userID}).
+        Where(squirrel.Lt{"expires_at": time.Now().Unix()})
+
+	sql, args, err := query.ToSql()
+	if err != nil {
+		return err
+	}
+
+	_, err = r.db.ExecContext(ctx, sql, args...)
+	if err != nil {
+		logrus.WithError(err).Error("Failed to delete expired refresh tokens")
+		return err
+	}
+
+	logrus.Infof("Expired refresh tokens deleted successfully for user ID: %d", userID)
+	return nil
 }

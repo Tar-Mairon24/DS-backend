@@ -65,10 +65,6 @@ func (h *AuthHandler) UserLogout(c *gin.Context) {
 	}
 	logrus.Infof("UserLogout endpoint called for user ID: %d", userID)
 
-	var logoutData = models.LogoutData{
-		UserID: uint(userID),
-	}
-
 	jwtToken, err := c.Cookie("jwt_token")
 	if err != nil {
 		logrus.WithError(err).Error("JWT token not found in cookies")
@@ -86,9 +82,19 @@ func (h *AuthHandler) UserLogout(c *gin.Context) {
 			"message": "Unauthorized logout attempt",
 		})
 		return
-	}	
+	}
 
-	if err := h.authUsecase.Logout(c.Request.Context(), logoutData.UserID); err != nil {
+	refreshToken, err := c.Cookie("refresh_token")
+	if err != nil {
+		logrus.WithError(err).Error("Refresh token not found in cookies")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Invalid request",
+			"message": "Missing refresh token",
+		})
+		return
+	}
+
+	if err := h.authUsecase.Logout(c.Request.Context(), refreshToken); err != nil {
 		if err.Error() == "no token found for the given user ID, user was not logged in" {
 			logrus.Warn("User was not logged in")
 			c.JSON(http.StatusBadRequest, gin.H{

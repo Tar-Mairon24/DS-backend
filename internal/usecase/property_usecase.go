@@ -12,11 +12,13 @@ import (
 
 type PropertyUseCase struct {
 	propertyRepo ports.PropertyRepository
+	imageRepo   ports.ImageRepository
 }
 
-func NewPropertyUseCase(propertyRepo ports.PropertyRepository) ports.PropertyUseCase {
+func NewPropertyUseCase(propertyRepo ports.PropertyRepository, imageRepo ports.ImageRepository) ports.PropertyUseCase {
 	return &PropertyUseCase{
 		propertyRepo: propertyRepo,
+		imageRepo: imageRepo,
 	}
 }
 
@@ -92,6 +94,11 @@ func (p *PropertyUseCase) DeleteProperty(ctx context.Context, id uint) error {
 	}
 
 	err := p.propertyRepo.Delete(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	err = p.imageRepo.DeleteImagesByPropertyID(ctx, id)
 	if err != nil {
 		return err
 	}

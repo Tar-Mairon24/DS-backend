@@ -27,8 +27,9 @@ type PropertyRepository interface {
 type TokenRepository interface {
 	SaveToken(ctx context.Context, token *models.RefreshToken) error
 	DeleteToken(ctx context.Context, tokenID string) error
-	GetTokenIDByUserID(ctx context.Context, userID uint) (string, error)
+	GetTokenByToken(ctx context.Context, token string) (*models.RefreshToken, error)
 	GetTokenByUserID(ctx context.Context, userID uint) (*models.RefreshToken, error)
+	DeleteExpiredTokensByUserID(ctx context.Context, userID uint) error
 }
 
 type EmailRepository interface {
@@ -48,6 +49,7 @@ type ImageRepository interface {
 	GetImagesByPropertyID(ctx context.Context, propertyID uint) ([]models.Image, error)
 	GetMainImageByPropertyID(ctx context.Context, propertyID uint) (*models.Image, error)
 	UpdateMainImageStatus(ctx context.Context, propertyID uint, imageID uint) error
+	DeleteImagesByPropertyID(ctx context.Context, propertyID uint) error
 	UpdateImage(ctx context.Context, image *models.Image) (*models.Image, error)
 	DeleteImage(ctx context.Context, id uint) error
 	HardDeleteImage(ctx context.Context, id uint) error
