@@ -1,6 +1,8 @@
 package repositoryMock
 
 import (
+	"context"
+
 	"github.com/stretchr/testify/mock"
 
 	"ds-backend/internal/domain/models"
@@ -14,47 +16,46 @@ func NewMockUserRepo() *MockUserRepository {
 	return &MockUserRepository{}
 }
 
-func (m *MockUserRepository) Create(user *models.User) (*models.UserResponse, error) {
-	args := m.Called(user)
+func (m *MockUserRepository) Create(ctx context.Context, user *models.User) (*models.UserResponse, error) {
+	args := m.Called(ctx, user)
 	if userResponse, ok := args.Get(0).(*models.UserResponse); ok {
 		return userResponse, args.Error(1)
 	}
 	return nil, args.Error(1)
 }
-func (m *MockUserRepository) GetByID(id uint) (*models.UserResponse, error) {
-	args := m.Called(id)
+func (m *MockUserRepository) GetByID(ctx context.Context, id uint) (*models.UserResponse, error) {
+	args := m.Called(ctx, id)
 	if user, ok := args.Get(0).(*models.UserResponse); ok {
 		return user, args.Error(1)
 	}
 	return nil, args.Error(1)
 }
-func (m *MockUserRepository) ConsultPassword(username string) (string, error) {
-	args := m.Called(username)
+func (m *MockUserRepository) ConsultPassword(ctx context.Context, email string) (string, error) {
+	args := m.Called(ctx, email)
 	return args.String(0), args.Error(1)
 }
-
-func (m *MockUserRepository) GetByEmail(email string) (*models.User, error) {
-	args := m.Called(email)
+func (m *MockUserRepository) GetByEmail(ctx context.Context, email string) (*models.User, error) {
+	args := m.Called(ctx, email)
 	if user, ok := args.Get(0).(*models.User); ok {
 		return user, args.Error(1)
 	}
 	return nil, args.Error(1)
 }
-func (m *MockUserRepository) GetAll() ([]models.UserResponse, error) {
-	args := m.Called()
+func (m *MockUserRepository) GetAll(ctx context.Context) ([]models.UserResponse, error) {
+	args := m.Called(ctx)
 	if users, ok := args.Get(0).([]models.UserResponse); ok {
 		return users, args.Error(1)
 	}
 	return nil, args.Error(1)
 }
-func (m *MockUserRepository) Update(user *models.User) (*models.UserResponse, error) {
-	args := m.Called(user)
+func (m *MockUserRepository) Update(ctx context.Context, user *models.User) (*models.UserResponse, error) {
+	args := m.Called(ctx, user)
 	if userResponse, ok := args.Get(0).(*models.UserResponse); ok {
 		return userResponse, args.Error(1)
 	}
 	return nil, args.Error(1)
 }
-func (m *MockUserRepository) Delete(userID uint) error {
-	args := m.Called(userID)
+func (m *MockUserRepository) Delete(ctx context.Context, id uint) error {
+	args := m.Called(ctx, id)
 	return args.Error(0)
 }

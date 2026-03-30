@@ -25,12 +25,12 @@ func NewPropertyRepository(db *sql.DB) ports.PropertyRepository {
 	}
 }
 
-func (r *PropertyRepository) GetAll(ctx context.Context, ) ([]models.PropertyCard, error) {
+func (r *PropertyRepository) GetAll(ctx context.Context) ([]models.PropertyCard, error) {
 	query := r.qb.Select(
 		"p.id", "p.title", "p.price", "p.bedrooms", "p.bathrooms",
 		"p.construction_m2", "p.city", "p.neighborhood",
 		"p.property_type", "p.transaction_type", "p.status", "i.path", "p.created_at",
-		).
+	).
 		From("properties p").
 		LeftJoin("images i ON i.property_id = p.id AND i.main_image = 1 AND i.deleted_at IS NULL").
 		Where(squirrel.Expr("p.deleted_at IS NULL"))
@@ -55,9 +55,9 @@ func (r *PropertyRepository) GetAll(ctx context.Context, ) ([]models.PropertyCar
 	for rows.Next() {
 		var property models.PropertyCard
 
-        if err := rows.Scan(
-            &property.ID,
-            &property.Title,
+		if err := rows.Scan(
+			&property.ID,
+			&property.Title,
 			&property.Price,
 			&property.Bedrooms,
 			&property.Bathrooms,
@@ -90,11 +90,11 @@ func (r *PropertyRepository) GetAll(ctx context.Context, ) ([]models.PropertyCar
 }
 
 func (r *PropertyRepository) GetByID(ctx context.Context, id uint) (*models.PropertyResponse, error) {
-	query := r.qb.Select("id, title, address, neighborhood, city, zone, reference, price, construction_m2, land_m2, is_occupied, is_furnished, floors, bedrooms, bathrooms, garage_size, garden_m2, gas_types, amenities, extras, utilities, notes, owner_id, user_id, property_type, transaction_type, status, created_at, updated_at").
-		From("properties").
+	query := r.qb.Select("p.id, p.title, p.address, p.neighborhood, p.city, p.zone, p.reference, p.price, p.construction_m2, p.land_m2, p.is_occupied, p.is_furnished, p.floors, p.bedrooms, p.bathrooms, p.garage_size, p.garden_m2, p.gas_types, p.amenities, p.extras, p.utilities, p.notes, p.description, p.owner_id, p.user_id, p.property_type, p.transaction_type, p.status, p.created_at, p.updated_at").
+		From("properties p").
 		Where(squirrel.And{
-			squirrel.Eq{"id": id},
-			squirrel.Expr("deleted_at IS NULL"),
+			squirrel.Eq{"p.id": id},
+			squirrel.Expr("p.deleted_at IS NULL"),
 		})
 
 	sqlStr, args, err := query.ToSql()
@@ -127,6 +127,7 @@ func (r *PropertyRepository) GetByID(ctx context.Context, id uint) (*models.Prop
 		&property.Extras,
 		&property.Utilities,
 		&property.Notes,
+		&property.Description,
 		&property.OwnerID,
 		&property.UserID,
 		&property.PropertyType,
@@ -148,49 +149,49 @@ func (r *PropertyRepository) GetByID(ctx context.Context, id uint) (*models.Prop
 }
 
 func (r *PropertyRepository) Create(ctx context.Context, property *models.Property) (*models.PropertyResponse, error) {
-    query := r.qb.Insert("properties").
-        Columns(
-            "title", "address", "neighborhood", "city",
-            "zone", "reference", "price", "construction_m2", "land_m2",
-            "is_occupied", "is_furnished", "floors", "bedrooms", "bathrooms",
-            "garage_size", "garden_m2", "gas_types", "amenities", "extras",
-            "utilities", "notes", "owner_id", "user_id", "property_type",
-            "transaction_type", "status",
-        ).
-        Values(
-            property.Title, property.Address, property.Neighborhood, property.City,
-            property.Zone, property.Reference, property.Price, property.ConstructionM2, property.LandM2,
-            property.IsOccupied, property.IsFurnished, property.Floors, property.Bedrooms, property.Bathrooms,
-            property.GarageSize, property.GardenM2, property.GasTypes, property.Amenities, property.Extras,
-            property.Utilities, property.Notes, property.OwnerID, property.UserID, property.PropertyType,
-            property.TransactionType, property.Status,
-        )
+	query := r.qb.Insert("properties").
+		Columns(
+			"title", "address", "neighborhood", "city",
+			"zone", "reference", "price", "construction_m2", "land_m2",
+			"is_occupied", "is_furnished", "floors", "bedrooms", "bathrooms",
+			"garage_size", "garden_m2", "gas_types", "amenities", "extras",
+			"utilities", "notes", "description", "owner_id", "user_id", "property_type",
+			"transaction_type", "status",
+		).
+		Values(
+			property.Title, property.Address, property.Neighborhood, property.City,
+			property.Zone, property.Reference, property.Price, property.ConstructionM2, property.LandM2,
+			property.IsOccupied, property.IsFurnished, property.Floors, property.Bedrooms, property.Bathrooms,
+			property.GarageSize, property.GardenM2, property.GasTypes, property.Amenities, property.Extras,
+			property.Utilities, property.Notes, property.Description, property.OwnerID, property.UserID, property.PropertyType,
+			property.TransactionType, property.Status,
+		)
 
-    sqlStr, args, err := query.ToSql()
-    if err != nil {
-        logrus.WithError(err).Error("Failed to build SQL query for creating a new property")
-        return nil, err
-    }
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		logrus.WithError(err).Error("Failed to build SQL query for creating a new property")
+		return nil, err
+	}
 
-    result, err := r.db.ExecContext(ctx, sqlStr, args...)
-    if err != nil {
-        logrus.WithError(err).Error("Failed to execute query for creating a new property")
-        return nil, err
-    }
+	result, err := r.db.ExecContext(ctx, sqlStr, args...)
+	if err != nil {
+		logrus.WithError(err).Error("Failed to execute query for creating a new property")
+		return nil, err
+	}
 
-    id, err := result.LastInsertId()
-    if err != nil {
-        logrus.WithError(err).Error("Failed to get last insert ID")
-        return nil, err
-    }
+	id, err := result.LastInsertId()
+	if err != nil {
+		logrus.WithError(err).Error("Failed to get last insert ID")
+		return nil, err
+	}
 
 	if id < 0 || id > int64(^uint(0)>>1) {
 		return nil, errors.New("invalid ID: integer overflow")
 	}
-    property.ID = uint(id)
+	property.ID = uint(id)
 	property.CreatedAt = time.Now()
-    logrus.Infof("Property created successfully with ID: %d", property.ID)
-    return property.ToResponse(), nil
+	logrus.Infof("Property created successfully with ID: %d", property.ID)
+	return property.ToResponse(), nil
 }
 
 func (r *PropertyRepository) Update(ctx context.Context, property *models.Property) (*models.PropertyResponse, error) {
@@ -216,6 +217,7 @@ func (r *PropertyRepository) Update(ctx context.Context, property *models.Proper
 		Set("extras", property.Extras).
 		Set("utilities", property.Utilities).
 		Set("notes", property.Notes).
+		Set("description", property.Description).
 		Set("owner_id", property.OwnerID).
 		Set("user_id", property.UserID).
 		Set("property_type", property.PropertyType).
@@ -281,4 +283,4 @@ func (r *PropertyRepository) Delete(ctx context.Context, id uint) error {
 	}
 
 	return nil
-} 
+}

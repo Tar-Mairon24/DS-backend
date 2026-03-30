@@ -1,6 +1,8 @@
 package serviceMocks
 
 import (
+	"context"
+
 	"github.com/stretchr/testify/mock"
 
 	"ds-backend/internal/domain/models"
@@ -19,8 +21,8 @@ func (m *MockJWTService) GenerateToken(user *models.User) (string, error) {
 	return args.String(0), args.Error(1)
 }
 
-func (m *MockJWTService) RefreshToken(token string) (string, error) {
-	args := m.Called(token)
+func (m *MockJWTService) RefreshToken(ctx context.Context, token string) (string, error) {
+	args := m.Called(ctx, token)
 	return args.String(0), args.Error(1)
 }
 
@@ -32,7 +34,7 @@ func (m *MockJWTService) ValidateToken(token string) (*models.JWTClaims, error) 
 	return nil, args.Error(1)
 }
 
-func (m *MockJWTService) GetUserIDFromClaims(claims string) (uint, error) {
-	args := m.Called(claims)
+func (m *MockJWTService) GetUserIDFromClaims(ctx context.Context, tokenString string) (uint, error) {
+	args := m.Called(ctx, tokenString)
 	return args.Get(0).(uint), args.Error(1)
 }
