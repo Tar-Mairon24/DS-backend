@@ -35,7 +35,7 @@ services:
       start_period: 10s
 
   mysql:
-    image: mysql:8.0
+    image: mariadb:12.2.2
     container_name: ds_database
     restart: always
     environment:
@@ -50,11 +50,11 @@ services:
     networks:
       - ds_network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${DB_USER}", "-p${DB_PASSWORD}"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
 volumes:
   mysql_data:

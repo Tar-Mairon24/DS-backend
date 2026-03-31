@@ -2,6 +2,7 @@ package ports
 
 import (
 	"context"
+	"time"
 
 	"ds-backend/internal/domain/models"
 )
@@ -53,4 +54,13 @@ type ImageRepository interface {
 	UpdateImage(ctx context.Context, image *models.Image) (*models.Image, error)
 	DeleteImage(ctx context.Context, id uint) error
 	HardDeleteImage(ctx context.Context, id uint) error
+}
+
+type AppointmentRepository interface {
+	GetAll(ctx context.Context) ([]models.Appointment, error)
+	GetByID(ctx context.Context, id uint) (*models.Appointment, error)
+	GetByDay(ctx context.Context, day time.Time) ([]models.Appointment, error)
+	Create(ctx context.Context, appointment *models.Appointment) (*models.Appointment, error)
+	Update(ctx context.Context, appointment *models.Appointment) (*models.Appointment, error)
+	Delete(ctx context.Context, id uint) error
 }
