@@ -22,11 +22,13 @@ type Container struct {
 	tokenRepo    ports.TokenRepository
 	emailRepo    ports.EmailRepository
 	imageRepo    ports.ImageRepository
+	appointmentRepo ports.AppointmentRepository
 
 	userUsecase     ports.UserUseCase
 	propertyUsecase ports.PropertyUseCase
 	authUsecase     ports.AuthUseCase
 	imageUsecase    ports.ImageUseCase
+	appointmentUsecase ports.AppointmentUseCase
 
 	jwtService   ports.JWTService
 	emailService ports.EmailService
@@ -37,7 +39,7 @@ type Container struct {
 	authHandler     *handler.AuthHandler
 	emailHandler    *handler.EmailHandler
 	imageHandler    *handler.ImageHandler
-
+	appointmentHandler *handler.AppointmentHandler
 	hashing        middleware.HashingInterface
 	authMiddleware middleware.AuthMiddlewareInterface
 }
@@ -64,6 +66,7 @@ func NewContainer() *Container {
 	container.tokenRepo = repository.NewTokenRepository(container.SqlDB)
 	container.emailRepo = repository.NewEmailRepository(container.SqlDB)
 	container.imageRepo = repository.NewImageRepository(container.SqlDB)
+	container.appointmentRepo = repository.NewAppointmentRepository(container.SqlDB)
 	// services
 	container.jwtService = service.NewJWTService(container.userRepo)
 	container.emailService = service.NewEmailService(container.emailRepo)
@@ -73,6 +76,7 @@ func NewContainer() *Container {
 	container.propertyUsecase = usecase.NewPropertyUseCase(container.propertyRepo, container.imageRepo)
 	container.authUsecase = usecase.NewAuthUseCase(container.userRepo, container.tokenRepo, container.jwtService, container.hashing, container.authMiddleware)
 	container.imageUsecase = usecase.NewImageUseCase(container.imageRepo)
+	container.appointmentUsecase = usecase.NewAppointmentUseCase(container.appointmentRepo)
 
 	// handlers
 	container.userHandler = handler.NewUserHandler(container.userUsecase)
@@ -80,6 +84,7 @@ func NewContainer() *Container {
 	container.authHandler = handler.NewAuthHandler(container.jwtService, container.authUsecase)
 	container.emailHandler = handler.NewEmailHandler(container.emailService)
 	container.imageHandler = handler.NewImageHandler(container.imageUsecase)
+	container.appointmentHandler = handler.NewAppointmentHandler(container.appointmentUsecase)
 	container.healthHandler = handler.NewHealthHandler()
 
 	logrus.Info("DI container initialized successfully")
@@ -91,6 +96,7 @@ type Handlers struct {
 	UserHandler     *handler.UserHandler
 	HealthHandler   *handler.HealthHandler
 	AuthHandler     *handler.AuthHandler
+	AppointmentHandler *handler.AppointmentHandler
 	ImageHandler    *handler.ImageHandler
 	EmailHandler    *handler.EmailHandler
 }
@@ -103,6 +109,7 @@ func (c *Container) GetHandlers() *Handlers {
 		AuthHandler:     c.authHandler,
 		EmailHandler:    c.emailHandler,
 		ImageHandler:    c.imageHandler,
+		AppointmentHandler: c.appointmentHandler,
 	}
 }
 

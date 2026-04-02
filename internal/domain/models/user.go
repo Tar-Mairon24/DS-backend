@@ -30,6 +30,12 @@ type UserResponse struct {
 	UpdatedAt    *time.Time `json:"updated_at,omitempty"`
 }
 
+type UserInfo struct {
+	ID 	 uint   `json:"id"`
+	Username string `json:"username"`
+	Email   string `json:"email"`
+}
+
 func (user *User) ToUserResponse() *UserResponse {
 	if user == nil {
 		return nil

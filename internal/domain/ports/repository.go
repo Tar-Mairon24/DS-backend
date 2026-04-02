@@ -57,10 +57,13 @@ type ImageRepository interface {
 }
 
 type AppointmentRepository interface {
-	GetAll(ctx context.Context) ([]models.Appointment, error)
-	GetByID(ctx context.Context, id uint) (*models.Appointment, error)
-	GetByDay(ctx context.Context, day time.Time) ([]models.Appointment, error)
-	Create(ctx context.Context, appointment *models.Appointment) (*models.Appointment, error)
-	Update(ctx context.Context, appointment *models.Appointment) (*models.Appointment, error)
-	Delete(ctx context.Context, id uint) error
+    GetAll(ctx context.Context) ([]models.AppointmentCalendarView, error)
+    GetByID(ctx context.Context, id uint) (*models.AppointmentDetail, error)
+    GetByDay(ctx context.Context, day time.Time) ([]models.AppointmentCalendarView, error)
+    GetByWeek(ctx context.Context, from time.Time) ([]models.AppointmentCalendarView, error)
+    GetByMonth(ctx context.Context, year int, month int) ([]models.AppointmentCalendarView, error)
+	ClientHasOverlap(ctx context.Context, clientID uint, start, end time.Time, excludeID uint) (bool, error)
+    Create(ctx context.Context, appointment *models.Appointment) (*models.Appointment, error)
+    Update(ctx context.Context, appointment *models.Appointment) (*models.Appointment, error)
+    Delete(ctx context.Context, id uint) error
 }

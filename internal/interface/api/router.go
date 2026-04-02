@@ -28,6 +28,7 @@ func SetupRouter(handlers *di.Handlers, services di.Services, middleware di.Midd
 		setupEmailRoutes(v1, handlers.EmailHandler)
 		setupUploadServerRoutes(r, services.JwtService, middleware.AuthMiddleware)
 		setupImageRoutes(v1, handlers.ImageHandler, services.JwtService, middleware.AuthMiddleware)
+		setupAppointmentRoutes(v1, handlers.AppointmentHandler, services.JwtService, middleware.AuthMiddleware)
 	}
 
 	return r

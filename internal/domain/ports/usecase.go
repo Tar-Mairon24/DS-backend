@@ -2,6 +2,7 @@ package ports
 
 import (
 	"context"
+	"time"
 
 	"ds-backend/internal/domain/models"
 )
@@ -38,4 +39,15 @@ type ImageUseCase interface {
 	UpdateMainImageStatus(ctx context.Context, propertyID uint, imageID uint) error
 	UpdateImage(ctx context.Context, image *models.Image) (*models.Image, error)
 	DeleteImage(ctx context.Context, id uint) error
+}
+
+type AppointmentUseCase interface {
+    GetAll(ctx context.Context) ([]models.AppointmentCalendarView, error)
+    GetByID(ctx context.Context, id uint) (*models.AppointmentDetail, error)
+    GetByDay(ctx context.Context, day time.Time) ([]models.AppointmentCalendarView, error)
+    GetByWeek(ctx context.Context, from time.Time) ([]models.AppointmentCalendarView, error)
+    GetByMonth(ctx context.Context, year int, month int) ([]models.AppointmentCalendarView, error)
+    Create(ctx context.Context, req *models.AppointmentRequest) (*models.Appointment, error) 
+    Update(ctx context.Context, id uint, req *models.AppointmentRequest) (*models.Appointment, error)
+    Delete(ctx context.Context, id uint) error
 }

@@ -26,11 +26,11 @@ func setupAuthRoutes(rg *gin.RouterGroup, authHandler *handler.AuthHandler) {
 
 func setupUserRoutes(rg *gin.RouterGroup, userHandler *handler.UserHandler, jwtService ports.JWTService, middleware middleware.AuthMiddlewareInterface) {
 	users := rg.Group("/users")
+	users.POST("", userHandler.CreateUser)       // POST /api/v1/users
 	users.Use(middleware.JWTAuthMiddleware(jwtService))
 	{
 		users.GET("", userHandler.GetUsers)          // GET /api/v1/users
 		users.GET("/:id", userHandler.GetUserByID)   // GET /api/v1/users/:id
-		users.POST("", userHandler.CreateUser)       // POST /api/v1/users
 		users.PUT("/:id", userHandler.UpdateUser)    // PUT /api/v1/users
 		users.DELETE("/:id", userHandler.DeleteUser) // DELETE /api/v1/users/:id
 	}
@@ -99,6 +99,19 @@ func setupUploadServerRoutes(router *gin.Engine, jwtService ports.JWTService, au
             http.ServeContent(c.Writer, c.Request, filePath, time.Time{}, f.(io.ReadSeeker))
         })
     }
+}
+
+func setupAppointmentRoutes(rg *gin.RouterGroup, appointmentHandler *handler.AppointmentHandler, jwtService ports.JWTService, middleware middleware.AuthMiddlewareInterface) {
+	appointments := rg.Group("/appointments")
+	appointments.Use(middleware.JWTAuthMiddleware(jwtService))
+	{
+		appointments.GET("", appointmentHandler.GetAll)          // GET /api/v1/appointments
+		appointments.GET("/:id", appointmentHandler.GetByID)   // GET /api/v1/appointments/:id
+		appointments.GET("/calendar", appointmentHandler.GetCalendar) // GET /api/v1/appointments/calendar?view=day|week|month
+		appointments.POST("", appointmentHandler.Create)         // POST /api/v1/appointments
+		appointments.PUT("/:id", appointmentHandler.Update)      // PUT /api/v1/appointments/:id
+		appointments.DELETE("/:id", appointmentHandler.Delete)   // DELETE /api/v1/appointments/:id
+	}
 }
 
 func setupHealthRoutes(rg *gin.RouterGroup, healthHandler *handler.HealthHandler) {
