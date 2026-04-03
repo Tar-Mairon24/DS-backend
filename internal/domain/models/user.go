@@ -11,6 +11,7 @@ type User struct {
 	Verified      bool           `json:"verified"`
 	Phone         *string        `json:"phone,omitempty"`
 	MFAActivated  bool           `json:"mfa_activated"`
+	Notes		  *string        `json:"notes,omitempty"`
 	CreatedAt     time.Time      `json:"created_at"`
 	UpdatedAt     *time.Time     `json:"updated_at,omitempty"`
 	DeletedAt     *time.Time     `json:"-"`
@@ -26,6 +27,7 @@ type UserResponse struct {
 	Verified     bool       `json:"verified"`
 	Phone        *string    `json:"phone,omitempty"`
 	MFAActivated bool       `json:"mfa_activated"`
+	Notes		 *string    `json:"notes,omitempty"`
 	CreatedAt    time.Time  `json:"created_at"`
 	UpdatedAt    *time.Time `json:"updated_at,omitempty"`
 }
@@ -34,7 +36,13 @@ type UserInfo struct {
 	ID 	 uint   `json:"id"`
 	Username string `json:"username"`
 	Email   string `json:"email"`
+	Notes    *string `json:"notes,omitempty"`
 }
+
+const (
+	CreateContextSelf = "self"
+	CreateContextAgent = "agent"
+)
 
 func (user *User) ToUserResponse() *UserResponse {
 	if user == nil {
@@ -46,6 +54,9 @@ func (user *User) ToUserResponse() *UserResponse {
 		Email:     user.Email,
 		Role:      user.Role,
 		Verified:  user.Verified,
+		Phone:     user.Phone,
+		MFAActivated: user.MFAActivated,
+		Notes:     user.Notes,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
 	}

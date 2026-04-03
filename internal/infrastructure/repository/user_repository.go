@@ -82,8 +82,8 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.
 
 func (r *UserRepository) Create(ctx context.Context, user *models.User) (*models.UserResponse, error) {
 	query := r.qb.Insert("users").
-		Columns("username", "email", "password", "role").
-		Values(user.Username, user.Email, user.Password, user.Role)
+		Columns("username", "email", "password", "role", "phone", "notes").
+		Values(user.Username, user.Email, user.Password, user.Role, user.Phone, user.Notes)
 
 	sql, args, err := query.ToSql()
 	if err != nil {

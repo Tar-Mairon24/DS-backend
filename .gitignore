@@ -63,6 +63,7 @@ go.work.sum
 
 # env file
 .env
+scripts/.cookies.txt
 
 # Editor/IDE
 # .idea/

@@ -26,13 +26,15 @@ func setupAuthRoutes(rg *gin.RouterGroup, authHandler *handler.AuthHandler) {
 
 func setupUserRoutes(rg *gin.RouterGroup, userHandler *handler.UserHandler, jwtService ports.JWTService, middleware middleware.AuthMiddlewareInterface) {
 	users := rg.Group("/users")
-	users.POST("", userHandler.CreateUser)       // POST /api/v1/users
+	users.POST("", userHandler.CreateUser) // POST /api/v1/users
 	users.Use(middleware.JWTAuthMiddleware(jwtService))
 	{
-		users.GET("", userHandler.GetUsers)          // GET /api/v1/users
-		users.GET("/:id", userHandler.GetUserByID)   // GET /api/v1/users/:id
-		users.PUT("/:id", userHandler.UpdateUser)    // PUT /api/v1/users
-		users.DELETE("/:id", userHandler.DeleteUser) // DELETE /api/v1/users/:id
+		users.GET("", userHandler.GetUsers)              // GET /api/v1/users
+		users.GET("/:id", userHandler.GetUserByID)       // GET /api/v1/users/:id
+		users.POST("/clients", userHandler.CreateClient) // POST /api/v1/users/clients
+		users.POST("/owners", userHandler.CreateOwner)   // POST /api/v1/users/owners
+		users.PUT("/:id", userHandler.UpdateUser)        // PUT /api/v1/users
+		users.DELETE("/:id", userHandler.DeleteUser)     // DELETE /api/v1/users/:id
 	}
 }
 
@@ -59,7 +61,7 @@ func setupEmailRoutes(rg *gin.RouterGroup, emailHandler *handler.EmailHandler) {
 
 func setupImageRoutes(rg *gin.RouterGroup, imageHandler *handler.ImageHandler, jwtService ports.JWTService, middleware middleware.AuthMiddlewareInterface) {
 	propertyImages := rg.Group("properties/:id/images")
-	propertyImages.Use(middleware.JWTAuthMiddleware(jwtService)) 
+	propertyImages.Use(middleware.JWTAuthMiddleware(jwtService))
 	{
 		propertyImages.POST("", imageHandler.SaveImage)                            // POST /api/v1/properties/:id/images
 		propertyImages.GET("", imageHandler.GetImagesByPropertyID)                 // GET /api/v1/properties/:id/images
@@ -77,40 +79,40 @@ func setupImageRoutes(rg *gin.RouterGroup, imageHandler *handler.ImageHandler, j
 }
 
 func setupUploadServerRoutes(router *gin.Engine, jwtService ports.JWTService, authMiddleware middleware.AuthMiddlewareInterface) {
-    uploads := router.Group("/uploads")
-    uploads.Use(authMiddleware.JWTAuthMiddleware(jwtService))
-    {
-        uploads.GET("/*filepath", func(c *gin.Context) {
-            filePath := filepath.Clean(c.Param("filepath"))
+	uploads := router.Group("/uploads")
+	uploads.Use(authMiddleware.JWTAuthMiddleware(jwtService))
+	{
+		uploads.GET("/*filepath", func(c *gin.Context) {
+			filePath := filepath.Clean(c.Param("filepath"))
 
-            if strings.Contains(filePath, "..") {
-                c.JSON(http.StatusForbidden, gin.H{"error": "invalid path"})
-                return
-            }
+			if strings.Contains(filePath, "..") {
+				c.JSON(http.StatusForbidden, gin.H{"error": "invalid path"})
+				return
+			}
 
-            fs := middleware.SafeFS{Root: http.Dir("/app/uploads")}
-            f, err := fs.Open(filePath)
-            if err != nil {
-                c.JSON(http.StatusNotFound, gin.H{"error": "file not found"})
-                return
-            }
-            defer f.Close()
+			fs := middleware.SafeFS{Root: http.Dir("/app/uploads")}
+			f, err := fs.Open(filePath)
+			if err != nil {
+				c.JSON(http.StatusNotFound, gin.H{"error": "file not found"})
+				return
+			}
+			defer f.Close()
 
-            http.ServeContent(c.Writer, c.Request, filePath, time.Time{}, f.(io.ReadSeeker))
-        })
-    }
+			http.ServeContent(c.Writer, c.Request, filePath, time.Time{}, f.(io.ReadSeeker))
+		})
+	}
 }
 
 func setupAppointmentRoutes(rg *gin.RouterGroup, appointmentHandler *handler.AppointmentHandler, jwtService ports.JWTService, middleware middleware.AuthMiddlewareInterface) {
 	appointments := rg.Group("/appointments")
 	appointments.Use(middleware.JWTAuthMiddleware(jwtService))
 	{
-		appointments.GET("", appointmentHandler.GetAll)          // GET /api/v1/appointments
-		appointments.GET("/:id", appointmentHandler.GetByID)   // GET /api/v1/appointments/:id
+		appointments.GET("", appointmentHandler.GetAll)               // GET /api/v1/appointments
+		appointments.GET("/:id", appointmentHandler.GetByID)          // GET /api/v1/appointments/:id
 		appointments.GET("/calendar", appointmentHandler.GetCalendar) // GET /api/v1/appointments/calendar?view=day|week|month
-		appointments.POST("", appointmentHandler.Create)         // POST /api/v1/appointments
-		appointments.PUT("/:id", appointmentHandler.Update)      // PUT /api/v1/appointments/:id
-		appointments.DELETE("/:id", appointmentHandler.Delete)   // DELETE /api/v1/appointments/:id
+		appointments.POST("", appointmentHandler.Create)              // POST /api/v1/appointments
+		appointments.PUT("/:id", appointmentHandler.Update)           // PUT /api/v1/appointments/:id
+		appointments.DELETE("/:id", appointmentHandler.Delete)        // DELETE /api/v1/appointments/:id
 	}
 }
 

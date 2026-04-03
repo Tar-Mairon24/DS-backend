@@ -12,7 +12,7 @@ import (
 
 	"ds-backend/internal/domain/models"
 	"ds-backend/internal/interface/api/handler"
-	"ds-backend/test/mocks/usecase"
+	usecaseMocks "ds-backend/test/mocks/usecase"
 )
 
 func TestGetUsers_Success(t *testing.T) {
@@ -141,7 +141,7 @@ func TestCreateUser_Success(t *testing.T) {
 	c.Request, _ = http.NewRequest("POST", "/users", bytes.NewBufferString(userData))
 	c.Request.Header.Set("Content-Type", "application/json")
 
-	handler.CreateUser(c)
+	handler.CreateAgent(c)
 
 	assert.Equal(t, http.StatusCreated, w.Code)
 	assert.Contains(t, w.Body.String(), `"message":"User created successfully"`)
@@ -161,7 +161,7 @@ func TestCreateUser_InvalidJSON(t *testing.T) {
 	c.Request, _ = http.NewRequest("POST", "/users", bytes.NewBufferString(invalidJSON))
 	c.Request.Header.Set("Content-Type", "application/json")
 
-	handler.CreateUser(c)
+	handler.CreateAgent(c)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	assert.Contains(t, w.Body.String(), `"error":"Invalid request"`)
@@ -186,7 +186,7 @@ func TestCreateUser_InternalServerError(t *testing.T) {
 	c.Request, _ = http.NewRequest("POST", "/users", bytes.NewBufferString(userData))
 	c.Request.Header.Set("Content-Type", "application/json")
 
-	handler.CreateUser(c)
+	handler.CreateAgent(c)
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 	assert.Contains(t, w.Body.String(), `"error":"Failed to create user"`)

@@ -43,6 +43,7 @@ func (h *UserHandler) GetUsers(c *gin.Context) {
 		return
 	}
 
+	logrus.Infof("Retrieved %d users", len(users))
 	c.JSON(http.StatusOK, gin.H{
 		"data":    users,
 		"message": "Users retrieved successfully",
@@ -74,6 +75,7 @@ func (h *UserHandler) GetUserByID(c *gin.Context) {
 		return
 	}
 
+	logrus.Infof("User retrieved successfully: %v", user)
 	c.JSON(http.StatusOK, gin.H{
 		"data":    user,
 		"message": "User retrieved successfully",
@@ -81,8 +83,9 @@ func (h *UserHandler) GetUserByID(c *gin.Context) {
 }
 
 func (h *UserHandler) CreateUser(c *gin.Context) {
-	var user models.User
-	if err := c.ShouldBindJSON(&user); err != nil {
+	logrus.Infof("CreateUser endpoint called")
+	var req models.User
+	if err := c.ShouldBindJSON(&req); err != nil {
 		logrus.WithError(err).Error("Invalid request body")
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   "Invalid request",
@@ -91,7 +94,11 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		return
 	}
 
-	userResponse, err := h.userUsecase.CreateUser(c.Request.Context(), &user)
+	if req.Role != "admin" {
+		req.Role = "agente"
+	}
+
+	userResponse, err := h.userUsecase.CreateUser(c.Request.Context(), &req, models.CreateContextSelf)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to create user")
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -101,13 +108,78 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		return
 	}
 
+	logrus.Infof("User created successfully: %v", userResponse)
 	c.JSON(http.StatusCreated, gin.H{
 		"data":    userResponse,
 		"message": "User created successfully",
 	})
 }
 
+func (h *UserHandler) CreateOwner(c *gin.Context) {
+	logrus.Infof("CreateOwner endpoint called")
+	var req models.User
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logrus.WithError(err).Error("Invalid request body")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Invalid request",
+			"message": "Failed to parse user data",
+		})
+		return
+	}
+
+	req.Role = "owner"
+	
+	userResponse, err := h.userUsecase.CreateUser(c.Request.Context(), &req, models.CreateContextAgent)
+	if err != nil {
+		logrus.WithError(err).Error("Failed to create owner")
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Failed to create owner",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	logrus.Infof("Owner created successfully: %v", userResponse)
+	c.JSON(http.StatusCreated, gin.H{
+		"data":    userResponse,
+		"message": "Owner created successfully",
+	})
+}
+
+func (h *UserHandler) CreateClient(c *gin.Context) {
+	logrus.Infof("CreateClient endpoint called")
+	var req models.User
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logrus.WithError(err).Error("Invalid request body")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Invalid request",
+			"message": "Failed to parse user data",
+		})
+		return
+	}
+
+	req.Role = "client"
+	
+	userResponse, err := h.userUsecase.CreateUser(c.Request.Context(), &req, models.CreateContextAgent)
+	if err != nil {
+		logrus.WithError(err).Error("Failed to create client")
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Failed to create client",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	logrus.Infof("Client created successfully: %v", userResponse)
+	c.JSON(http.StatusCreated, gin.H{
+		"data":    userResponse,
+		"message": "Client created successfully",
+	})
+}
+
+
 func (h *UserHandler) UpdateUser(c *gin.Context) {
+	logrus.Infof("UpdateUser endpoint called")
 	var user models.User
 	if err := c.ShouldBindJSON(&user); err != nil {
 		logrus.WithError(err).Error("Invalid request body")
@@ -128,6 +200,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
+	logrus.Infof("User updated successfully: %v", UserResponse)
 	c.JSON(http.StatusOK, gin.H{
 		"data":    UserResponse,
 		"message": "User updated successfully",
@@ -135,6 +208,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 }
 
 func (h *UserHandler) DeleteUser(c *gin.Context) {
+	logrus.Infof("DeleteUser endpoint called")
 	userIDStr := c.Param("id")
 	logrus.Infof("DeleteUser endpoint called with ID: %s", userIDStr)
 
@@ -157,8 +231,6 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 		return
 	}
 
-	logrus.Info("🔍 DEBUG: Returning 204 (No Content)")
+	logrus.Infof("DeleteUser endpoint called with ID: %d", userID)
 	c.JSON(http.StatusNoContent, nil)
 }
-
-

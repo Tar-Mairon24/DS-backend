@@ -31,26 +31,28 @@ func (uc *UserUseCase) GetUserByID(ctx context.Context, id uint) (*models.UserRe
 	return uc.repo.GetByID(ctx, id)
 }
 
-func (uc *UserUseCase) CreateUser(ctx context.Context, user *models.User) (*models.UserResponse, error) {
-	if user.Password == "" {
-		logrus.Error("Password cannot be empty")
-		return nil, errors.New("password cannot be empty")
-	}
+func (uc *UserUseCase) CreateUser(ctx context.Context, user *models.User, createBy string) (*models.UserResponse, error) {
 	if user.Username == "" {
 		logrus.Error("Username cannot be empty")
 		return nil, errors.New("username cannot be empty")
 	}
-	if user.Email == "" {
+	if createBy == models.CreateContextSelf && user.Email == "" {
 		logrus.Error("Email cannot be empty")
 		return nil, errors.New("email cannot be empty")
 	}
 
-	hashedPassword, err := uc.hashing.HashPassword(user.Password)
-	if err != nil {
-		logrus.WithError(err).Error("Failed to hash password")
-		return nil, err
+	if createBy == models.CreateContextSelf && user.Password == "" {
+		return nil, errors.New("password cannot be empty")
 	}
-	user.Password = hashedPassword
+
+	if user.Password != "" {
+		hashedPassword, err := uc.hashing.HashPassword(user.Password)
+		if err != nil {
+			logrus.WithError(err).Error("Failed to hash password")
+			return nil, err
+		}
+		user.Password = hashedPassword
+	}
 
 
 	return uc.repo.Create(ctx, user)

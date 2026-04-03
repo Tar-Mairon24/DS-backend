@@ -10,3 +10,7 @@ compose.yml
 .gitignore
 
 Readme.md
+
+test/
+
+scripts/
