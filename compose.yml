@@ -44,7 +44,6 @@ services:
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASSWORD}
       TZ: ${SERVER_TIMEZONE}
-    command: --default-time-zone='-06:00'
     ports:
       - "${DB_PORT}:3306"
     volumes:

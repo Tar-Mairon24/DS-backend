@@ -5,14 +5,45 @@ import (
 	"time"
 )
 
+// CustomTime handles ISO 8601 unmarshaling
+type CustomTime struct {
+	time.Time
+}
+
+func (ct *CustomTime) UnmarshalJSON(b []byte) error {
+	var s string
+	if err := json.Unmarshal(b, &s); err != nil {
+		return err
+	}
+
+	formats := []string{
+		time.RFC3339,
+		time.RFC3339Nano,
+		"2006-01-02T15:04:05Z",
+		"2006-01-02T15:04:05",
+		"2006-01-02 15:04:05",
+	}
+
+	var t time.Time
+	var err error
+	for _, format := range formats {
+		t, err = time.Parse(format, s)
+		if err == nil {
+			ct.Time = t
+			return nil
+		}
+	}
+	return err
+}
+
 type Appointment struct {
 	ID          uint       `json:"id"`
 	Title       string     `json:"title"`
 	Description string     `json:"description"`
-	StartDate   time.Time  `json:"start_time"` 
-	EndDate     time.Time  `json:"end_time"`	
+	StartDate   time.Time  `json:"start_date"`
+	EndDate     time.Time  `json:"end_date"`
 	Status      string     `json:"status"`
-	Notes       *string     `json:"notes,omitempty"`
+	Notes       *string    `json:"notes,omitempty"`
 	ClientID    uint       `json:"client_id"`
 	OwnerID     uint       `json:"owner_id"`
 	PropertyID  uint       `json:"property_id"`
@@ -22,51 +53,50 @@ type Appointment struct {
 }
 
 type AppointmentRequest struct {
-	Title       string    `json:"title" validate:"required"`
-	Description string    `json:"description"`
-	StartDate   time.Time `json:"start_time" validate:"required"`
-	EndDate     time.Time `json:"end_time" validate:"required,gtfield=StartDate"`
-	Status      string    `json:"status" validate:"required,oneof=scheduled completed cancelled"`
-	Notes       *string   `json:"notes,omitempty"`
-	ClientID    uint      `json:"client_id" validate:"required"`
-	OwnerID     uint      `json:"owner_id" validate:"required"`
-	PropertyID  uint      `json:"property_id" validate:"required"`
+	Title       string     `json:"title" validate:"required"`
+	Description string     `json:"description"`
+	StartDate   CustomTime `json:"start_date" validate:"required"`
+	EndDate     CustomTime `json:"end_date" validate:"required"`
+	Status      string     `json:"status" validate:"required,oneof=scheduled completed cancelled"`
+	Notes       *string    `json:"notes,omitempty"`
+	ClientID    uint       `json:"client_id" validate:"required"`
+	PropertyID  uint       `json:"property_id" validate:"required"`
 }
 
 type AppointmentCalendarView struct {
-	ID          uint       `json:"id"`
-	Title       string     `json:"title"`
-	Description string     `json:"description"`
-	StartDate   time.Time  `json:"start_time"`
-	EndDate     time.Time  `json:"end_time"`
-	Status      string     `json:"status"`
-	Property 	PropertyTile   `json:"property"`
-	ClientID    uint       `json:"client_id"`
-	OwnerID     uint       `json:"owner_id"`
+	ID          uint         `json:"id"`
+	Title       string       `json:"title"`
+	Description string       `json:"description"`
+	StartDate   time.Time    `json:"start_date"`
+	EndDate     time.Time    `json:"end_date"`
+	Status      string       `json:"status"`
+	Property    PropertyTile `json:"property"`
+	ClientID    uint         `json:"client_id"`
+	OwnerID     uint         `json:"owner_id"`
 }
 
 type AppointmentDetail struct {
-    ID              uint        `json:"id"`
-    Title           string      `json:"title"`
-    Description     string      `json:"description"`
-    StartDate       time.Time   `json:"start_date"`
-    EndDate         time.Time   `json:"end_date"`
-    Status          string      `json:"status"`
-    Notes           *string     `json:"notes,omitempty"`
-    PropertyID      uint        `json:"property_id"`
-    PropertyTitle   string      `json:"property_title"`
-    PropertyAddress string      `json:"property_address"`
-    ClientID        uint        `json:"client_id"`
-    ClientName      string      `json:"client_name"`
-    ClientEmail     string      `json:"client_email"`
-    ClientPhone     *string     `json:"client_phone,omitempty"`
-    OwnerID         *uint       `json:"owner_id,omitempty"`
-    OwnerName       *string     `json:"owner_name,omitempty"`
-    OwnerEmail      *string     `json:"owner_email,omitempty"`
-    Agents          []UserInfo `json:"agents"`
+	ID              uint       `json:"id"`
+	Title           string     `json:"title"`
+	Description     string     `json:"description"`
+	StartDate       time.Time  `json:"start_date"`
+	EndDate         time.Time  `json:"end_date"`
+	Status          string     `json:"status"`
+	Notes           *string    `json:"notes,omitempty"`
+	PropertyID      uint       `json:"property_id"`
+	PropertyTitle   string     `json:"property_title"`
+	PropertyAddress string     `json:"property_address"`
+	ClientID        uint       `json:"client_id"`
+	ClientName      string     `json:"client_name"`
+	ClientEmail     string     `json:"client_email"`
+	ClientPhone     *string    `json:"client_phone,omitempty"`
+	OwnerID         *uint      `json:"owner_id,omitempty"`
+	OwnerName       *string    `json:"owner_name,omitempty"`
+	OwnerEmail      *string    `json:"owner_email,omitempty"`
+	Agents          []UserInfo `json:"agents"`
 }
 
 type rawAppointmentDetail struct {
-    AppointmentDetail
-    AgentsJSON json.RawMessage
+	AppointmentDetail
+	AgentsJSON json.RawMessage
 }

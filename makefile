@@ -40,7 +40,7 @@ seed:
 
 seed-restart-database: 
 	@docker compose down -v
-	@docker compose up -d
+	@docker compose up -d --build
 	@sleep 5
 	@$(MAKE) migrate-up
 	@bash ./scripts/seed_auth.sh

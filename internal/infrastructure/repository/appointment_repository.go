@@ -26,6 +26,11 @@ func NewAppointmentRepository(db *sql.DB) ports.AppointmentRepository {
 	}
 }
 
+// formatTimeForMySQL converts time.Time to MySQL DATETIME string format
+func formatTimeForMySQL(t time.Time) string {
+	return t.Format("2006-01-02 15:04:05")
+}
+
 const getAppointmentByIDSQL = `
 	SELECT
 		a.id, a.title, a.description, a.start_date, a.end_date, a.status, a.notes,
@@ -213,36 +218,36 @@ func (r *AppointmentRepository) GetByDay(ctx context.Context, day time.Time) ([]
 }
 
 func (r *AppointmentRepository) ClientHasOverlap(ctx context.Context, clientID uint, start, end time.Time, excludeID uint) (bool, error) {
-    q := r.qb.Select("1").
-        From("appointments").
-        Where(sq.Eq{"id_client": clientID}).
-        Where(sq.Expr("deleted_at IS NULL")).
-        Where(sq.Expr("start_date < ? AND end_date > ?", end, start))
+	q := r.qb.Select("1").
+		From("appointments").
+		Where(sq.Eq{"id_client": clientID}).
+		Where(sq.Expr("deleted_at IS NULL")).
+		Where(sq.Expr("start_date < ? AND end_date > ?", end, start))
 
-    if excludeID > 0 {
-        q = q.Where(sq.NotEq{"id": excludeID})
-    }
+	if excludeID > 0 {
+		q = q.Where(sq.NotEq{"id": excludeID})
+	}
 
-    sqlStr, args, err := q.Limit(1).ToSql()
-    if err != nil {
-        return false, err
-    }
+	sqlStr, args, err := q.Limit(1).ToSql()
+	if err != nil {
+		return false, err
+	}
 
-    var exists int
-    err = r.db.QueryRowContext(ctx, sqlStr, args...).Scan(&exists)
-    if errors.Is(err, sql.ErrNoRows) {
-        return false, nil
-    }
-    if err != nil {
-        return false, err
-    }
-    return true, nil
+	var exists int
+	err = r.db.QueryRowContext(ctx, sqlStr, args...).Scan(&exists)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 func (r *AppointmentRepository) Create(ctx context.Context, a *models.Appointment) (*models.Appointment, error) {
 	sqlStr, args, err := r.qb.Insert("appointments").
 		Columns("title", "description", "start_date", "end_date", "status", "notes", "id_client", "id_property").
-		Values(a.Title, a.Description, a.StartDate, a.EndDate, a.Status, a.Notes, a.ClientID, a.PropertyID).
+		Values(a.Title, a.Description, formatTimeForMySQL(a.StartDate), formatTimeForMySQL(a.EndDate), a.Status, a.Notes, a.ClientID, a.PropertyID).
 		ToSql()
 	if err != nil {
 		return nil, err
@@ -261,8 +266,8 @@ func (r *AppointmentRepository) Update(ctx context.Context, a *models.Appointmen
 	sqlStr, args, err := r.qb.Update("appointments").
 		Set("title", a.Title).
 		Set("description", a.Description).
-		Set("start_date", a.StartDate).
-		Set("end_date", a.EndDate).
+		Set("start_date", formatTimeForMySQL(a.StartDate)).
+		Set("end_date", formatTimeForMySQL(a.EndDate)).
 		Set("status", a.Status).
 		Set("notes", a.Notes).
 		Where(sq.Eq{"id": a.ID}).
