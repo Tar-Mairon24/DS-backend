@@ -8,7 +8,7 @@ import (
 )
 
 type UserRepository interface {
-	GetAll(ctx context.Context) ([]models.UserResponse, error)
+	GetAll(ctx context.Context, userType string) ([]models.UserResponse, error)
 	GetByID(ctx context.Context, id uint) (*models.UserResponse, error)
 	GetByEmail(ctx context.Context, email string) (*models.User, error)
 	ConsultPassword(ctx context.Context, email string) (string, error)
@@ -69,5 +69,7 @@ type AppointmentRepository interface {
 	Update(ctx context.Context, appointment *models.Appointment) (*models.Appointment, error)
 	UpdateTime(ctx context.Context, id uint, newStart, newEnd time.Time) error
 	UpdateStatus(ctx context.Context, id uint, newStatus string) error
+	UpdateAgents(ctx context.Context, appointmentID uint, agentIDs []uint) error
+	AddAgents(ctx context.Context, appointmentID uint, agentIDs []uint) error
 	Delete(ctx context.Context, id uint) error
 }

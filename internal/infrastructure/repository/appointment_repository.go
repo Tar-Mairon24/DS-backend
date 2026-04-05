@@ -256,10 +256,10 @@ func (r *AppointmentRepository) ClientHasOverlap(ctx context.Context, clientID u
 	return true, nil
 }
 
-func (r *AppointmentRepository) Create(ctx context.Context, a *models.Appointment) (*models.Appointment, error) {
+func (r *AppointmentRepository) Create(ctx context.Context, appointment *models.Appointment) (*models.Appointment, error) {
 	sqlStr, args, err := r.qb.Insert("appointments").
 		Columns("title", "description", "start_date", "end_date", "status", "notes", "id_client", "id_property").
-		Values(a.Title, a.Description, formatTimeForMySQL(a.StartDate), formatTimeForMySQL(a.EndDate), a.Status, a.Notes, a.ClientID, a.PropertyID).
+		Values(appointment.Title, appointment.Description, formatTimeForMySQL(appointment.StartDate), formatTimeForMySQL(appointment.EndDate), appointment.Status, appointment.Notes, appointment.ClientID, appointment.PropertyID).
 		ToSql()
 	if err != nil {
 		return nil, err
@@ -269,27 +269,42 @@ func (r *AppointmentRepository) Create(ctx context.Context, a *models.Appointmen
 		return nil, err
 	}
 	id, _ := res.LastInsertId()
-	a.ID = uint(id)
-	a.CreatedAt = time.Now()
-	return a, nil
+	appointment.ID = uint(id)
+	appointment.CreatedAt = time.Now()
+
+	if err := r.AddAgents(ctx, appointment.ID, appointment.AgentIDs); err != nil {
+		logrus.WithError(err).Error("failed to add agents to appointment")
+		return nil, err
+	}
+
+	return appointment, nil
 }
 
-func (r *AppointmentRepository) Update(ctx context.Context, a *models.Appointment) (*models.Appointment, error) {
+func (r *AppointmentRepository) Update(ctx context.Context, appointment *models.Appointment) (*models.Appointment, error) {
 	sqlStr, args, err := r.qb.Update("appointments").
-		Set("title", a.Title).
-		Set("description", a.Description).
-		Set("start_date", formatTimeForMySQL(a.StartDate)).
-		Set("end_date", formatTimeForMySQL(a.EndDate)).
-		Set("status", a.Status).
-		Set("notes", a.Notes).
-		Where(sq.Eq{"id": a.ID}).
+		Set("title", appointment.Title).
+		Set("description", appointment.Description).
+		Set("start_date", formatTimeForMySQL(appointment.StartDate)).
+		Set("end_date", formatTimeForMySQL(appointment.EndDate)).
+		Set("status", appointment.Status).
+		Set("notes", appointment.Notes).
+		Where(sq.Eq{"id": appointment.ID}).
 		Where(sq.Expr("deleted_at IS NULL")).
 		ToSql()
 	if err != nil {
 		return nil, err
 	}
 	_, err = r.db.ExecContext(ctx, sqlStr, args...)
-	return a, err
+	if err != nil {
+		return nil, err
+	}
+
+	if err := r.UpdateAgents(ctx, appointment.ID, appointment.AgentIDs); err != nil {
+		logrus.WithError(err).Error("failed to update agents for appointment")
+		return nil, err
+	}
+
+	return appointment, nil
 }
 
 func (r *AppointmentRepository) UpdateTime(ctx context.Context, id uint, newStart, newEnd time.Time) error {
@@ -323,6 +338,37 @@ func (r *AppointmentRepository) UpdateStatus(ctx context.Context, id uint, newSt
 		return err
 	}
 	return nil
+}
+
+func (r *AppointmentRepository) AddAgents(ctx context.Context, appointmentID uint, agentIDs []uint) error {
+	if len(agentIDs) == 0 {
+		return nil
+	}
+
+	builder := r.qb.Insert("appointment_agents").Columns("appointment_id", "user_id")
+	for _, agentID := range agentIDs {
+		builder = builder.Values(appointmentID, agentID)
+	}
+
+	sqlStr, args, err := builder.ToSql()
+	if err != nil {
+		logrus.WithError(err).Error("failed to build add agents query")
+		return err
+	}
+	_, err = r.db.ExecContext(ctx, sqlStr, args...)
+	if err != nil {
+		logrus.WithError(err).Error("failed to add agents to appointment")
+		return err
+	}
+	return nil
+}
+
+func (r *AppointmentRepository) UpdateAgents(ctx context.Context, appointmentID uint, agentIDs []uint) error {
+	if _, err := r.db.ExecContext(ctx, "DELETE FROM appointment_agents WHERE appointment_id = ?", appointmentID); err != nil {
+		logrus.WithError(err).Error("failed to delete existing agents")
+		return err
+	}
+	return r.AddAgents(ctx, appointmentID, agentIDs)
 }
 
 func (r *AppointmentRepository) Delete(ctx context.Context, id uint) error {

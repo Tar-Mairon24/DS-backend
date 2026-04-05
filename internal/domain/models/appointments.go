@@ -47,6 +47,7 @@ type Appointment struct {
 	ClientID    uint       `json:"client_id"`
 	OwnerID     uint       `json:"owner_id"`
 	PropertyID  uint       `json:"property_id"`
+	AgentIDs    []uint     `json:"agent_ids,omitempty"`
 	CreatedAt   time.Time  `json:"created_at"`
 	UpdatedAt   *time.Time `json:"updated_at,omitempty"`
 	DeletedAt   *time.Time `json:"-"`
@@ -61,6 +62,7 @@ type AppointmentRequest struct {
 	Notes       *string    `json:"notes,omitempty"`
 	ClientID    uint       `json:"client_id" validate:"required"`
 	PropertyID  uint       `json:"property_id" validate:"required"`
+	AgentIDs    []uint     `json:"agent_ids,omitempty"`
 }
 
 type AppointmentCalendarView struct {

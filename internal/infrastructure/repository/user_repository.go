@@ -112,7 +112,7 @@ func (r *UserRepository) Create(ctx context.Context, user *models.User) (*models
 	return user.ToUserResponse(), nil
 }
 
-func (r *UserRepository) GetAll(ctx context.Context, ) ([]models.UserResponse, error) {
+func (r *UserRepository) GetAll(ctx context.Context, userType string) ([]models.UserResponse, error) {
 	logrus.Info("Retrieving all users from the database")
 	if r.db == nil {
 		logrus.Error("Database connection is nil")
@@ -122,6 +122,10 @@ func (r *UserRepository) GetAll(ctx context.Context, ) ([]models.UserResponse, e
 		From("users").
 		Where(squirrel.Expr("deleted_at IS NULL")).
 		OrderBy("created_at DESC")
+
+	if userType != models.UserTypeAll {
+		query = query.Where(squirrel.Eq{"role": userType})
+	}
 
 	sql, args, err := query.ToSql()
 	if err != nil {

@@ -42,6 +42,11 @@ type UserInfo struct {
 const (
 	CreateContextSelf = "self"
 	CreateContextAgent = "agent"
+	UserTypeClient = "client"
+	UserTypeAgent = "agent"
+	UserTypeAdmin = "admin"
+	UserTypeOwner = "owner"
+	UserTypeAll = "all"
 )
 
 func (user *User) ToUserResponse() *UserResponse {

@@ -23,8 +23,11 @@ func NewUserUseCase(repo ports.UserRepository, hashing middleware.HashingInterfa
 	}
 }
 
-func (uc *UserUseCase) GetAllUsers(ctx context.Context) ([]models.UserResponse, error) {
-	return uc.repo.GetAll(ctx)
+func (uc *UserUseCase) GetAllUsers(ctx context.Context, userType string) ([]models.UserResponse, error) {
+	if userType != models.UserTypeClient && userType != models.UserTypeAgent && userType != models.UserTypeAdmin && userType != models.UserTypeOwner && userType != models.UserTypeAll {
+		return nil, errors.New("invalid user type")
+	}
+	return uc.repo.GetAll(ctx, userType)
 }
 
 func (uc *UserUseCase) GetUserByID(ctx context.Context, id uint) (*models.UserResponse, error) {

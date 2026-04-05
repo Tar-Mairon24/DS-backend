@@ -24,7 +24,11 @@ func NewUserHandler(userUsecase ports.UserUseCase) *UserHandler {
 func (h *UserHandler) GetUsers(c *gin.Context) {
 	logrus.Info("GetUsers endpoint called")
 
-	users, err := h.userUsecase.GetAllUsers(c.Request.Context())
+	userType := c.Query("type")
+	if userType == "" {
+		userType = models.UserTypeAll
+	}
+	users, err := h.userUsecase.GetAllUsers(c.Request.Context(), userType)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to get users")
 		c.JSON(http.StatusInternalServerError, gin.H{
