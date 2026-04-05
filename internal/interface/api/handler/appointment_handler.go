@@ -217,6 +217,84 @@ func (h *AppointmentHandler) Update(c *gin.Context) {
 	})
 }
 
+func (h *AppointmentHandler) Reschedule(c *gin.Context) {
+	logrus.Info("Reschedule Appointment endpoint called")
+	idParam := c.Param("id")
+	id, err := strconv.ParseUint(idParam, 10, 32)
+	if err != nil {
+		logrus.WithError(err).Error("Invalid appointment ID format")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Invalid appointment ID format",
+			"message": "ID must be a valid unsigned integer",
+		})
+		return
+	}
+
+	var req models.RescheduleRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logrus.WithError(err).Error("Invalid request body")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Invalid request body",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	ctx := c.Request.Context()
+	if err := h.appointmentUseCase.Reschedule(ctx, uint(id), req.StartDate, req.EndDate); err != nil {
+		logrus.WithError(err).Errorf("Failed to reschedule appointment with ID %d", id)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Failed to reschedule appointment",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	logrus.Infof("Appointment with ID %d rescheduled successfully", id)
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Appointment rescheduled successfully",
+	})
+}
+
+func (h *AppointmentHandler) UpdateStatus(c *gin.Context) {
+	logrus.Info("Update Appointment Status endpoint called")
+	idParam := c.Param("id")
+	id, err := strconv.ParseUint(idParam, 10, 32)
+	if err != nil {
+		logrus.WithError(err).Error("Invalid appointment ID format")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Invalid appointment ID format",
+			"message": "ID must be a valid unsigned integer",
+		})
+		return
+	}
+
+	var req models.UpdateStatusRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logrus.WithError(err).Error("Invalid request body")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Invalid request body",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	ctx := c.Request.Context()
+	if err := h.appointmentUseCase.UpdateStatus(ctx, uint(id), string(req.Status)); err != nil {
+		logrus.WithError(err).Errorf("Failed to update status of appointment with ID %d", id)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Failed to update appointment status",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	logrus.Infof("Status of appointment with ID %d updated successfully", id)
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Appointment status updated successfully",
+	})
+}
+
 func (h *AppointmentHandler) Delete(c *gin.Context) {
 	logrus.Info("Delete Appointment endpoint called")
 	idParam := c.Param("id")

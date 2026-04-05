@@ -45,6 +45,41 @@ func (h *PropertyHandler) GetProperties(c *gin.Context) {
 	c.JSON(http.StatusOK, properties)
 }
 
+func (h *PropertyHandler) GetPropertyCardByID(c *gin.Context) {
+	logrus.Info("GetPropertyCardByID endpoint called")
+
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil || id <= 0 {
+		logrus.WithError(err).Error("Invalid property ID")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Invalid property ID",
+			"message": "Property ID must be a positive integer",
+		})
+		return
+	}
+
+	propertyCard, err := h.propertyUsecase.GetPropertyCardByID(c.Request.Context(), uint(id))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Failed to retrieve property card",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	if propertyCard == nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error":   "Property not found",
+			"message": "No property found with the given ID",
+		})
+		return
+	}
+
+	logrus.Infof("Retrieved property card with ID: %d", propertyCard.ID)
+	c.JSON(http.StatusOK, propertyCard)
+}
+
 func (h *PropertyHandler) GetPropertyByID(c *gin.Context) {
 	logrus.Info("GetPropertyByID endpoint called")
 

@@ -19,6 +19,7 @@ type UserRepository interface {
 
 type PropertyRepository interface {
 	GetAll(ctx context.Context) ([]models.PropertyCard, error)
+	GetPropertyCardByID(ctx context.Context, id uint) (*models.PropertyCard, error)
 	GetByID(ctx context.Context, id uint) (*models.PropertyResponse, error)
 	Create(ctx context.Context, property *models.Property) (*models.PropertyResponse, error)
 	Update(ctx context.Context, property *models.Property) (*models.PropertyResponse, error)
@@ -57,13 +58,16 @@ type ImageRepository interface {
 }
 
 type AppointmentRepository interface {
-    GetAll(ctx context.Context) ([]models.AppointmentCalendarView, error)
-    GetByID(ctx context.Context, id uint) (*models.AppointmentDetail, error)
-    GetByDay(ctx context.Context, day time.Time) ([]models.AppointmentCalendarView, error)
-    GetByWeek(ctx context.Context, from time.Time) ([]models.AppointmentCalendarView, error)
-    GetByMonth(ctx context.Context, year int, month int) ([]models.AppointmentCalendarView, error)
+	GetAll(ctx context.Context) ([]models.AppointmentCalendarView, error)
+	GetByID(ctx context.Context, id uint) (*models.AppointmentDetail, error)
+	GetByDay(ctx context.Context, day time.Time) ([]models.AppointmentCalendarView, error)
+	GetByWeek(ctx context.Context, from time.Time) ([]models.AppointmentCalendarView, error)
+	GetByMonth(ctx context.Context, year int, month int) ([]models.AppointmentCalendarView, error)
+	GetClientIDByAppointmentID(ctx context.Context, id uint) (uint, error)
 	ClientHasOverlap(ctx context.Context, clientID uint, start, end time.Time, excludeID uint) (bool, error)
-    Create(ctx context.Context, appointment *models.Appointment) (*models.Appointment, error)
-    Update(ctx context.Context, appointment *models.Appointment) (*models.Appointment, error)
-    Delete(ctx context.Context, id uint) error
+	Create(ctx context.Context, appointment *models.Appointment) (*models.Appointment, error)
+	Update(ctx context.Context, appointment *models.Appointment) (*models.Appointment, error)
+	UpdateTime(ctx context.Context, id uint, newStart, newEnd time.Time) error
+	UpdateStatus(ctx context.Context, id uint, newStatus string) error
+	Delete(ctx context.Context, id uint) error
 }

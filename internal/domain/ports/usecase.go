@@ -18,6 +18,7 @@ type UserUseCase interface {
 type PropertyUseCase interface {
 	GetAllProperties(ctx context.Context) ([]models.PropertyCard, error)
 	GetPropertyByID(ctx context.Context, id uint) (*models.PropertyResponse, error)
+	GetPropertyCardByID(ctx context.Context, id uint) (*models.PropertyCard, error)
 	CreateProperty(ctx context.Context, property *models.Property) (*models.PropertyResponse, error)
 	UpdateProperty(ctx context.Context, property *models.Property) (*models.PropertyResponse, error)
 	DeleteProperty(ctx context.Context, id uint) error
@@ -49,5 +50,7 @@ type AppointmentUseCase interface {
     GetByMonth(ctx context.Context, year int, month int) ([]models.AppointmentCalendarView, error)
     Create(ctx context.Context, req *models.AppointmentRequest) (*models.Appointment, error) 
     Update(ctx context.Context, id uint, req *models.AppointmentRequest) (*models.Appointment, error)
+	Reschedule(ctx context.Context, id uint, newStart, newEnd time.Time) error
+	UpdateStatus(ctx context.Context, id uint, newStatus string) error
     Delete(ctx context.Context, id uint) error
 }

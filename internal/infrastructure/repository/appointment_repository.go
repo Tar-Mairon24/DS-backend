@@ -217,12 +217,24 @@ func (r *AppointmentRepository) GetByDay(ctx context.Context, day time.Time) ([]
 	return r.scanLightRows(rows)
 }
 
+func (r *AppointmentRepository) GetClientIDByAppointmentID(ctx context.Context, id uint) (uint, error) {
+	var clientID uint
+	err := r.db.QueryRowContext(ctx, "SELECT id_client FROM appointments WHERE id = ? AND deleted_at IS NULL", id).Scan(&clientID)
+	if err != nil {
+		return 0, err
+	}
+	return clientID, nil
+}
+
 func (r *AppointmentRepository) ClientHasOverlap(ctx context.Context, clientID uint, start, end time.Time, excludeID uint) (bool, error) {
 	q := r.qb.Select("1").
 		From("appointments").
 		Where(sq.Eq{"id_client": clientID}).
 		Where(sq.Expr("deleted_at IS NULL")).
-		Where(sq.Expr("start_date < ? AND end_date > ?", end, start))
+		Where(sq.And{
+			sq.Lt{"start_date": end},
+			sq.Gt{"end_date": start},
+		})
 
 	if excludeID > 0 {
 		q = q.Where(sq.NotEq{"id": excludeID})
@@ -278,6 +290,39 @@ func (r *AppointmentRepository) Update(ctx context.Context, a *models.Appointmen
 	}
 	_, err = r.db.ExecContext(ctx, sqlStr, args...)
 	return a, err
+}
+
+func (r *AppointmentRepository) UpdateTime(ctx context.Context, id uint, newStart, newEnd time.Time) error {
+	sqlStr, args, err := r.qb.Update("appointments").
+		Set("start_date", formatTimeForMySQL(newStart)).
+		Set("end_date", formatTimeForMySQL(newEnd)).
+		Where(sq.Eq{"id": id}).
+		Where(sq.Expr("deleted_at IS NULL")).
+		ToSql()
+	if err != nil {
+		return err
+	}
+	_, err = r.db.ExecContext(ctx, sqlStr, args...)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *AppointmentRepository) UpdateStatus(ctx context.Context, id uint, newStatus string) error {
+	sqlStr, args, err := r.qb.Update("appointments").
+		Set("status", newStatus).
+		Where(sq.Eq{"id": id}).
+		Where(sq.Expr("deleted_at IS NULL")).
+		ToSql()
+	if err != nil {
+		return err
+	}
+	_, err = r.db.ExecContext(ctx, sqlStr, args...)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *AppointmentRepository) Delete(ctx context.Context, id uint) error {

@@ -10,12 +10,16 @@ import (
 )
 
 type AppointmentUseCase struct {
-	repo ports.AppointmentRepository
+	repo         ports.AppointmentRepository
+	userRepo     ports.UserRepository
+	propertyRepo ports.PropertyRepository
 }
 
-func NewAppointmentUseCase(repo ports.AppointmentRepository) ports.AppointmentUseCase {
+func NewAppointmentUseCase(repo ports.AppointmentRepository, userRepo ports.UserRepository, propertyRepo ports.PropertyRepository) ports.AppointmentUseCase {
 	return &AppointmentUseCase{
-		repo: repo,
+		repo:         repo,
+		userRepo:     userRepo,
+		propertyRepo: propertyRepo,
 	}
 }
 
@@ -40,6 +44,20 @@ func (uc *AppointmentUseCase) GetByMonth(ctx context.Context, year int, month in
 }
 
 func (uc *AppointmentUseCase) Create(ctx context.Context, req *models.AppointmentRequest) (*models.Appointment, error) {
+	_, err := uc.userRepo.GetByID(ctx, req.ClientID)
+	if err != nil {
+		return nil, errors.New("client not found")
+	}
+
+	_, err = uc.propertyRepo.GetByID(ctx, req.PropertyID)
+	if err != nil {
+		return nil, errors.New("property not found")
+	}
+
+	if req.Status == "scheduled" && req.StartDate.Time.Before(time.Now()) {
+		return nil, errors.New("cannot schedule an appointment for a time that has already passed")
+	}
+
 	overlap, err := uc.repo.ClientHasOverlap(ctx, req.ClientID, req.StartDate.Time, req.EndDate.Time, 0)
 	if err != nil {
 		return nil, err
@@ -63,6 +81,15 @@ func (uc *AppointmentUseCase) Create(ctx context.Context, req *models.Appointmen
 }
 
 func (uc *AppointmentUseCase) Update(ctx context.Context, id uint, req *models.AppointmentRequest) (*models.Appointment, error) {
+	_, err := uc.repo.GetClientIDByAppointmentID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if req.Status == "scheduled" && req.StartDate.Time.Before(time.Now()) {
+		return nil, errors.New("cannot schedule an appointment for a time that has already passed")
+	}
+
 	overlap, err := uc.repo.ClientHasOverlap(ctx, req.ClientID, req.StartDate.Time, req.EndDate.Time, id)
 	if err != nil {
 		return nil, err
@@ -83,6 +110,36 @@ func (uc *AppointmentUseCase) Update(ctx context.Context, id uint, req *models.A
 		PropertyID:  req.PropertyID,
 	}
 	return uc.repo.Update(ctx, appointment)
+}
+
+func (uc *AppointmentUseCase) Reschedule(ctx context.Context, id uint, newStart, newEnd time.Time) error {
+	clientID, err := uc.repo.GetClientIDByAppointmentID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	overlap, err := uc.repo.ClientHasOverlap(ctx, clientID, newStart, newEnd, id)
+	if err != nil {
+		return err
+	}
+	if overlap {
+		return errors.New("client already has an appointment during this time")
+	}
+
+	return uc.repo.UpdateTime(ctx, id, newStart, newEnd)
+}
+
+func (uc *AppointmentUseCase) UpdateStatus(ctx context.Context, id uint, newStatus string) error {
+	if newStatus == "scheduled" {
+		appointment, err := uc.repo.GetByID(ctx, id)
+		if err != nil {
+			return err
+		}
+		if appointment.StartDate.Before(time.Now()) {
+			return errors.New("cannot schedule an appointment for a time that has already passed")
+		}
+	}
+	return uc.repo.UpdateStatus(ctx, id, newStatus)
 }
 
 func (uc *AppointmentUseCase) Delete(ctx context.Context, id uint) error {

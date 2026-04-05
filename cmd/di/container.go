@@ -17,31 +17,31 @@ import (
 type Container struct {
 	SqlDB *sql.DB
 
-	userRepo     ports.UserRepository
-	propertyRepo ports.PropertyRepository
-	tokenRepo    ports.TokenRepository
-	emailRepo    ports.EmailRepository
-	imageRepo    ports.ImageRepository
+	userRepo        ports.UserRepository
+	propertyRepo    ports.PropertyRepository
+	tokenRepo       ports.TokenRepository
+	emailRepo       ports.EmailRepository
+	imageRepo       ports.ImageRepository
 	appointmentRepo ports.AppointmentRepository
 
-	userUsecase     ports.UserUseCase
-	propertyUsecase ports.PropertyUseCase
-	authUsecase     ports.AuthUseCase
-	imageUsecase    ports.ImageUseCase
+	userUsecase        ports.UserUseCase
+	propertyUsecase    ports.PropertyUseCase
+	authUsecase        ports.AuthUseCase
+	imageUsecase       ports.ImageUseCase
 	appointmentUsecase ports.AppointmentUseCase
 
 	jwtService   ports.JWTService
 	emailService ports.EmailService
 
-	userHandler     *handler.UserHandler
-	propertyHandler *handler.PropertyHandler
-	healthHandler   *handler.HealthHandler
-	authHandler     *handler.AuthHandler
-	emailHandler    *handler.EmailHandler
-	imageHandler    *handler.ImageHandler
+	userHandler        *handler.UserHandler
+	propertyHandler    *handler.PropertyHandler
+	healthHandler      *handler.HealthHandler
+	authHandler        *handler.AuthHandler
+	emailHandler       *handler.EmailHandler
+	imageHandler       *handler.ImageHandler
 	appointmentHandler *handler.AppointmentHandler
-	hashing        middleware.HashingInterface
-	authMiddleware middleware.AuthMiddlewareInterface
+	hashing            middleware.HashingInterface
+	authMiddleware     middleware.AuthMiddlewareInterface
 }
 
 func NewContainer() *Container {
@@ -76,7 +76,7 @@ func NewContainer() *Container {
 	container.propertyUsecase = usecase.NewPropertyUseCase(container.propertyRepo, container.imageRepo)
 	container.authUsecase = usecase.NewAuthUseCase(container.userRepo, container.tokenRepo, container.jwtService, container.hashing, container.authMiddleware)
 	container.imageUsecase = usecase.NewImageUseCase(container.imageRepo)
-	container.appointmentUsecase = usecase.NewAppointmentUseCase(container.appointmentRepo)
+	container.appointmentUsecase = usecase.NewAppointmentUseCase(container.appointmentRepo, container.userRepo, container.propertyRepo)
 
 	// handlers
 	container.userHandler = handler.NewUserHandler(container.userUsecase)
@@ -92,23 +92,23 @@ func NewContainer() *Container {
 }
 
 type Handlers struct {
-	PropertyHandler *handler.PropertyHandler
-	UserHandler     *handler.UserHandler
-	HealthHandler   *handler.HealthHandler
-	AuthHandler     *handler.AuthHandler
+	PropertyHandler    *handler.PropertyHandler
+	UserHandler        *handler.UserHandler
+	HealthHandler      *handler.HealthHandler
+	AuthHandler        *handler.AuthHandler
 	AppointmentHandler *handler.AppointmentHandler
-	ImageHandler    *handler.ImageHandler
-	EmailHandler    *handler.EmailHandler
+	ImageHandler       *handler.ImageHandler
+	EmailHandler       *handler.EmailHandler
 }
 
 func (c *Container) GetHandlers() *Handlers {
 	return &Handlers{
-		PropertyHandler: c.propertyHandler,
-		UserHandler:     c.userHandler,
-		HealthHandler:   c.healthHandler,
-		AuthHandler:     c.authHandler,
-		EmailHandler:    c.emailHandler,
-		ImageHandler:    c.imageHandler,
+		PropertyHandler:    c.propertyHandler,
+		UserHandler:        c.userHandler,
+		HealthHandler:      c.healthHandler,
+		AuthHandler:        c.authHandler,
+		EmailHandler:       c.emailHandler,
+		ImageHandler:       c.imageHandler,
 		AppointmentHandler: c.appointmentHandler,
 	}
 }

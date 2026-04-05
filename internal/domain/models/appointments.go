@@ -42,7 +42,7 @@ type Appointment struct {
 	Description string     `json:"description"`
 	StartDate   time.Time  `json:"start_date"`
 	EndDate     time.Time  `json:"end_date"`
-	Status      string     `json:"status"`
+	Status      StatusType `json:"status"`
 	Notes       *string    `json:"notes,omitempty"`
 	ClientID    uint       `json:"client_id"`
 	OwnerID     uint       `json:"owner_id"`
@@ -57,7 +57,7 @@ type AppointmentRequest struct {
 	Description string     `json:"description"`
 	StartDate   CustomTime `json:"start_date" validate:"required"`
 	EndDate     CustomTime `json:"end_date" validate:"required"`
-	Status      string     `json:"status" validate:"required,oneof=scheduled completed cancelled"`
+	Status      StatusType `json:"status" validate:"required,oneof=scheduled completed cancelled archived no-show"`
 	Notes       *string    `json:"notes,omitempty"`
 	ClientID    uint       `json:"client_id" validate:"required"`
 	PropertyID  uint       `json:"property_id" validate:"required"`
@@ -69,7 +69,7 @@ type AppointmentCalendarView struct {
 	Description string       `json:"description"`
 	StartDate   time.Time    `json:"start_date"`
 	EndDate     time.Time    `json:"end_date"`
-	Status      string       `json:"status"`
+	Status      StatusType   `json:"status"`
 	Property    PropertyTile `json:"property"`
 	ClientID    uint         `json:"client_id"`
 	OwnerID     uint         `json:"owner_id"`
@@ -81,7 +81,7 @@ type AppointmentDetail struct {
 	Description     string     `json:"description"`
 	StartDate       time.Time  `json:"start_date"`
 	EndDate         time.Time  `json:"end_date"`
-	Status          string     `json:"status"`
+	Status          StatusType `json:"status"`
 	Notes           *string    `json:"notes,omitempty"`
 	PropertyID      uint       `json:"property_id"`
 	PropertyTitle   string     `json:"property_title"`
@@ -100,3 +100,26 @@ type rawAppointmentDetail struct {
 	AppointmentDetail
 	AgentsJSON json.RawMessage
 }
+
+type RescheduleRequest struct {
+	StartDate time.Time `json:"start_date" binding:"required"`
+	EndDate   time.Time `json:"end_date" binding:"required"`
+}
+
+type StatusUpdateRequest struct {
+	Status StatusType `json:"status" binding:"required,oneof=scheduled completed cancelled archived no-show"`
+}
+
+type UpdateStatusRequest struct {
+	Status StatusType `json:"status" binding:"required,oneof=scheduled completed cancelled archived no-show"`
+}
+
+type StatusType string
+
+const (
+	AppointmentStatusScheduled StatusType = "scheduled"
+	AppointmentStatusCompleted StatusType = "completed"
+	AppointmentStatusCancelled StatusType = "cancelled"
+	AppointmentStatusArchived  StatusType = "archived"
+	AppointmentStatusNoShow    StatusType = "no-show"
+)

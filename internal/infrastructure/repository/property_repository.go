@@ -89,6 +89,51 @@ func (r *PropertyRepository) GetAll(ctx context.Context) ([]models.PropertyCard,
 	return properties, nil
 }
 
+func (r *PropertyRepository) GetPropertyCardByID(ctx context.Context, id uint) (*models.PropertyCard, error) {
+	query := r.qb.Select(
+		"p.id", "p.title", "p.price", "p.bedrooms", "p.bathrooms",
+		"p.construction_m2", "p.city", "p.neighborhood",
+		"p.property_type", "p.transaction_type", "p.status", "i.path", "p.created_at",
+	).
+		From("properties p").
+		LeftJoin("images i ON i.property_id = p.id AND i.main_image = 1 AND i.deleted_at IS NULL").
+		Where(squirrel.Eq{"p.id": id}).
+		Where(squirrel.Expr("p.deleted_at IS NULL"))
+
+	sqlStr, args, err := query.ToSql()
+	if err != nil {
+		logrus.WithError(err).Error("Failed to build SQL query for getting property card by ID")
+		return nil, err
+	}
+
+	var property models.PropertyCard
+	err = r.db.QueryRowContext(ctx, sqlStr, args...).Scan(
+		&property.ID,
+		&property.Title,
+		&property.Price,
+		&property.Bedrooms,
+		&property.Bathrooms,
+		&property.ConstructionM2,
+		&property.City,
+		&property.Neighborhood,
+		&property.PropertyType,
+		&property.TransactionType,
+		&property.Status,
+		&property.MainImagePath,
+		&property.CreatedAt,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			logrus.WithError(err).Warnf("No property found with ID %d", id)
+			return nil, nil
+		}
+		logrus.WithError(err).Error("Failed to execute query for getting property card by ID")
+		return nil, err
+	}
+
+	return &property, nil
+}
+
 func (r *PropertyRepository) GetByID(ctx context.Context, id uint) (*models.PropertyResponse, error) {
 	query := r.qb.Select("p.id, p.title, p.address, p.neighborhood, p.city, p.zone, p.reference, p.price, p.construction_m2, p.land_m2, p.is_occupied, p.is_furnished, p.floors, p.bedrooms, p.bathrooms, p.garage_size, p.garden_m2, p.gas_types, p.amenities, p.extras, p.utilities, p.notes, p.description, p.owner_id, p.user_id, p.property_type, p.transaction_type, p.status, p.created_at, p.updated_at").
 		From("properties p").

@@ -44,6 +44,7 @@ func setupPropertyRoutes(rg *gin.RouterGroup, propertyHandler *handler.PropertyH
 	{
 		properties.GET("", propertyHandler.GetProperties)         // GET /api/v1/properties
 		properties.GET("/:id", propertyHandler.GetPropertyByID)   // GET /api/v1/properties/:id
+		properties.GET("/:id/card", propertyHandler.GetPropertyCardByID) // GET /api/v1/properties/:id/card
 		properties.POST("", propertyHandler.CreateProperty)       // POST /api/v1/properties
 		properties.PUT("/:id", propertyHandler.UpdateProperty)    // PUT /api/v1/properties/:id
 		properties.DELETE("/:id", propertyHandler.DeleteProperty) // DELETE /api/v1/properties/:id
@@ -112,6 +113,8 @@ func setupAppointmentRoutes(rg *gin.RouterGroup, appointmentHandler *handler.App
 		appointments.GET("/calendar", appointmentHandler.GetCalendar) // GET /api/v1/appointments/calendar?view=day|week|month
 		appointments.POST("", appointmentHandler.Create)              // POST /api/v1/appointments
 		appointments.PUT("/:id", appointmentHandler.Update)           // PUT /api/v1/appointments/:id
+		appointments.PATCH("/:id/reschedule", appointmentHandler.Reschedule) // PATCH /api/v1/appointments/:id/reschedule
+		appointments.PATCH("/:id/status", appointmentHandler.UpdateStatus)   // PATCH /api/v1/appointments/:id/status
 		appointments.DELETE("/:id", appointmentHandler.Delete)        // DELETE /api/v1/appointments/:id
 	}
 }

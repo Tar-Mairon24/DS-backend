@@ -41,6 +41,17 @@ func (p *PropertyUseCase) GetPropertyByID(ctx context.Context, id uint) (*models
 	return property, nil
 }
 
+func (p *PropertyUseCase) GetPropertyCardByID(ctx context.Context, id uint) (*models.PropertyCard, error) {
+	propertyCard, err := p.propertyRepo.GetPropertyCardByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if propertyCard == nil {
+		return nil, errors.New("property not found")
+	}
+	return propertyCard, nil
+}
+
 func (p *PropertyUseCase) CreateProperty(ctx context.Context, property *models.Property) (*models.PropertyResponse, error) {
 	if property == nil {
 		logrus.Error("Property cannot be nil")
