@@ -8,7 +8,7 @@ import (
 )
 
 type UserUseCase interface {
-	GetAllUsers(ctx context.Context, userType string) ([]models.UserResponse, error)
+	GetAllUsers(ctx context.Context, userType string, search string) ([]models.UserResponse, error)
 	GetUserByID(ctx context.Context, id uint) (*models.UserResponse, error)
 	CreateUser(ctx context.Context, user *models.User, createBy string) (*models.UserResponse, error)
 	UpdateUser(ctx context.Context, user *models.User) (*models.UserResponse, error)

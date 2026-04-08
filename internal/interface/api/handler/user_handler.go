@@ -28,7 +28,10 @@ func (h *UserHandler) GetUsers(c *gin.Context) {
 	if userType == "" {
 		userType = models.UserTypeAll
 	}
-	users, err := h.userUsecase.GetAllUsers(c.Request.Context(), userType)
+
+	search := c.Query("q")
+
+	users, err := h.userUsecase.GetAllUsers(c.Request.Context(), userType, search)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to get users")
 		c.JSON(http.StatusInternalServerError, gin.H{

@@ -12,12 +12,14 @@ import (
 
 type PropertyUseCase struct {
 	propertyRepo ports.PropertyRepository
+	userRepo     ports.UserRepository
 	imageRepo    ports.ImageRepository
 }
 
-func NewPropertyUseCase(propertyRepo ports.PropertyRepository, imageRepo ports.ImageRepository) ports.PropertyUseCase {
+func NewPropertyUseCase(propertyRepo ports.PropertyRepository, userRepo ports.UserRepository, imageRepo ports.ImageRepository) ports.PropertyUseCase {
 	return &PropertyUseCase{
 		propertyRepo: propertyRepo,
+		userRepo:    userRepo,
 		imageRepo:    imageRepo,
 	}
 }
@@ -65,6 +67,14 @@ func (p *PropertyUseCase) CreateProperty(ctx context.Context, property *models.P
 		logrus.Error("Price must be greater than zero")
 		return nil, errors.New("price must be greater than zero")
 	}
+
+	owner, err := p.userRepo.GetByID(ctx, property.OwnerID)
+    if err != nil {
+        return nil, errors.New("owner not found")
+    }
+    if owner.Role != models.UserTypeOwner {
+        return nil, errors.New("user is not an owner")
+    }
 
 	createdProperty, err := p.propertyRepo.Create(ctx, property)
 	if err != nil {

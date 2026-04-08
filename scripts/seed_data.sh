@@ -7,19 +7,31 @@ set +a
 BASE_URL=http://localhost:8080/api/v1
 COOKIE_JAR="$(dirname "$0")/.cookies.txt"
 
+# Generate dates relative to today
+TODAY=$(date -u +%Y-%m-%d)
+TOMORROW=$(date -u -d "+1 day" +%Y-%m-%d)
+TWO_DAYS=$(date -u -d "+2 days" +%Y-%m-%d)
+THREE_DAYS=$(date -u -d "+3 days" +%Y-%m-%d)
+
 post_data() {
     local name="$1"
     local body="$2"
     
     echo "Seeding $name..."
-    response=$(curl -s -o /dev/null -w "%{http_code}" -X 'POST' \
+    response=$(curl -s -w "%{http_code}" -X 'POST' \
         --location "$BASE_URL/$name" \
         -H "Content-Type: application/json" \
         -b "$COOKIE_JAR" \
         -c "$COOKIE_JAR" \
         -d "$body")
     
-    echo "Response status code: $response"
+    http_code="${response: -3}"
+    response_body="${response%???}"
+    
+    echo "Response status code: $http_code"
+    if [ "$http_code" != "201" ] && [ "$http_code" != "200" ]; then
+        echo "Error response: $response_body"
+    fi
 }
 
 # Seeds
@@ -33,7 +45,7 @@ post_data "users" '{
 
 post_data "users/clients" '{
     "email": "cliente1@prueba.com",
-    "username": "Cliente 1",
+    "username": "Miguel Hernández García",
     "role": "client",
     "phone": "8440929384",
     "notes": "Es estudiante universitario"
@@ -41,7 +53,7 @@ post_data "users/clients" '{
 
 post_data "users/clients" '{
     "email": "cliente2@prueba.com",
-    "username": "Cliente 2",
+    "username": "Ana Martínez López",
     "role": "client",
     "phone": "8440929434",
     "notes": "Tiene perros"
@@ -49,7 +61,7 @@ post_data "users/clients" '{
 
 post_data "users/clients" '{
     "email": "cliente3@prueba.com",
-    "username": "Cliente 3",
+    "username": "Carlos Rodríguez Sánchez",
     "role": "client",
     "phone": "8440929332",
     "notes": "Es muy desmadroso"
@@ -57,7 +69,7 @@ post_data "users/clients" '{
 
 post_data "users/owners" '{
     "email": "propietario1@prueba.com",
-    "username": "Propietario 1",
+    "username": "Lupita Farias Garza",
     "role": "owner",
     "phone": "8440929284",
     "notes": "No acepta mascotas"
@@ -65,7 +77,7 @@ post_data "users/owners" '{
 
 post_data "users/owners" '{
     "email": "propietario2@prueba.com",
-    "username": "Propietario 2",
+    "username": "Carlos Hernández Martínez",
     "role": "owner",
     "phone": "8440922384",
     "notes": "No acepta niños ni mascotas"
@@ -73,7 +85,7 @@ post_data "users/owners" '{
 
 post_data "users/owners" '{
     "email": "propietario3@prueba.com",
-    "username": "Propietario 3",
+    "username": "Carlos Rodríguez Sánchez",
     "role": "owner",
     "phone": "8440929784",
     "notes": "Es muy amable y acepta mascotas"
@@ -102,7 +114,7 @@ post_data "properties" '{
   "extras": ["aire acondicionado", "calefacción", "sistema de seguridad"],
   "utilities": ["agua", "luz", "gas", "internet", "cable"],
   "notes": "Propiedad en excelente estado, recientemente remodelada. Ubicada en zona tranquila y segura.",
-  "owner_id": 1,
+  "owner_id": 6,
   "user_id": 1,
   "property_type": "Casa",
   "transaction_type": "Venta",
@@ -132,7 +144,7 @@ post_data "properties" '{
   "extras": ["aire acondicionado", "cocina integral", "lavadora"],
   "utilities": ["agua", "luz", "gas", "internet"],
   "notes": "Departamento ideal para personas o parejas. Incluye servicios básicos en la renta. Disponible para renta inmediata.",
-  "owner_id": 2,
+  "owner_id": 6,
   "user_id": 1,
   "property_type": "Apartamento",
   "transaction_type": "Renta",
@@ -162,7 +174,7 @@ post_data "properties" '{
   "extras": ["sistema de seguridad", "cerca perimetral", "puerta de herrería"],
   "utilities": ["agua", "luz", "gas"],
   "notes": "Casa colonial con mucho potencial. Requiere mantenimiento. Ubicada en zona de alto valor histórico.",
-  "owner_id": 3,
+  "owner_id": 7,
   "user_id": 1,
   "property_type": "Casa",
   "transaction_type": "Venta",
@@ -192,7 +204,7 @@ post_data "properties" '{
   "extras": ["aire acondicionado central", "pisos de madera", "ventanales amplios"],
   "utilities": ["agua", "luz", "gas", "internet", "cable"],
   "notes": "Loft de lujo en ubicación privilegiada. Ideal para profesionales. Condominio de alta seguridad.",
-  "owner_id": 1,
+  "owner_id": 8,
   "user_id": 1,
   "property_type": "Loft",
   "transaction_type": "Venta",
@@ -222,7 +234,7 @@ post_data "properties" '{
   "extras": ["aire acondicionado", "calefacción", "cocina equipada"],
   "utilities": ["agua", "luz", "gas", "internet"],
   "notes": "Casa familiar ideal para vivir. Fraccionamiento seguro y con buena plusvalía. Disponible para renta con depósito.",
-  "owner_id": 2,
+  "owner_id": 7,
   "user_id": 1,
   "property_type": "Casa",
   "transaction_type": "Renta",
@@ -232,8 +244,8 @@ post_data "properties" '{
 post_data "appointments" '{
     "title": "Visita inicial - Casa Pedregal",
     "description": "Recorrido inicial de la propiedad con comprador interesado",
-    "start_date": "2026-04-03T10:00:00Z",
-    "end_date": "2026-04-03T11:00:00Z",
+    "start_date": "'"$TOMORROW"'T09:00:00Z",
+    "end_date": "'"$TOMORROW"'T10:00:00Z",
     "status": "scheduled",
     "notes": "El cliente prefiere acabados modernos, destacar la remodelación de la cocina",
     "client_id": 3,
@@ -243,8 +255,8 @@ post_data "appointments" '{
 post_data "appointments" '{
     "title": "Segunda visita - Torre Cumbres",
     "description": "El cliente regresa para una segunda revisión antes de hacer una oferta",
-    "start_date": "2026-04-03T14:00:00Z",
-    "end_date": "2026-04-03T15:00:00Z",
+    "start_date": "'"$TOMORROW"'T13:00:00Z",
+    "end_date": "'"$TOMORROW"'T14:00:00Z",
     "status": "scheduled",
     "notes": null,
     "client_id": 4,
@@ -254,8 +266,8 @@ post_data "appointments" '{
 post_data "appointments" '{
     "title": "Visita de inversión - Departamento Cumbres",
     "description": "Cliente interesado en adquirir la propiedad como inversión para renta",
-    "start_date": "2026-04-08T11:00:00Z",
-    "end_date": "2026-04-08T12:00:00Z",
+    "start_date": "'"$TWO_DAYS"'T10:00:00Z",
+    "end_date": "'"$TWO_DAYS"'T11:00:00Z",
     "status": "scheduled",
     "notes": "Preguntar sobre rendimiento esperado y plusvalía de la zona",
     "client_id": 5,
@@ -265,8 +277,8 @@ post_data "appointments" '{
 post_data "appointments" '{
     "title": "Revisión de contrato - Residencial del Valle",
     "description": "Reunión para revisar términos del contrato de compraventa antes de firmar",
-    "start_date": "2026-04-10T16:00:00Z",
-    "end_date": "2026-04-10T17:30:00Z",
+    "start_date": "'"$THREE_DAYS"'T15:00:00Z",
+    "end_date": "'"$THREE_DAYS"'T16:30:00Z",
     "status": "scheduled",
     "notes": "El cliente solicita revisar cláusulas de penalización por cancelación",
     "client_id": 3,

@@ -5,10 +5,10 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
-	"log"
 	"math/big"
 	"os"
 
+	"github.com/sirupsen/logrus"
 	"github.com/wneessen/go-mail"
 
 	"ds-backend/internal/domain/models"
@@ -26,13 +26,13 @@ func NewEmailService(emailRepo ports.EmailRepository) ports.EmailService {
 }
 
 func (s *EmailService) SendVerificationEmail(ctx context.Context, toEmail string, motivo string) error {
-	verificationCode := s.generateVerificationCode(ctx)
+	verificationCode := s.generateVerificationCode()
 
 	if err := s.emailRepo.SaveVerificationCode(ctx, toEmail, verificationCode, motivo); err != nil {
 		return err
 	}
 
-	if err := s.sendEmail(ctx, toEmail, verificationCode); err != nil {
+	if err := s.sendEmail(toEmail, verificationCode); err != nil {
 		return err
 	}
 
@@ -80,7 +80,7 @@ func (s *EmailService) ResendVerificationEmail(ctx context.Context, toEmail stri
 	}
 
 	if usado == true {
-		log.Println("Code already verified for user:", toEmail)
+		logrus.Println("Code already verified for user:", toEmail)
 		motivo = "Reintento de verificacion por el motivo: " + motivo
 		return s.SendVerificationEmail(ctx, toEmail, motivo)
 	}
@@ -90,15 +90,15 @@ func (s *EmailService) ResendVerificationEmail(ctx context.Context, toEmail stri
 		return err
 	}
 
-	log.Printf("Resend count for %s: %d", toEmail, reenviado)
+	logrus.Printf("Resend count for %s: %d", toEmail, reenviado)
 
 	if reenviado >= 3 {
 		return errors.New("maximum number of resends reached")
 	}
 
-	verificationCode := s.generateVerificationCode(ctx)
+	verificationCode := s.generateVerificationCode()
 
-	if err := s.sendEmail(ctx, toEmail, verificationCode); err != nil {
+	if err := s.sendEmail(toEmail, verificationCode); err != nil {
 		return err
 	}
 
@@ -106,12 +106,12 @@ func (s *EmailService) ResendVerificationEmail(ctx context.Context, toEmail stri
 		return err
 	}
 
-	log.Printf("Resend count updated for %s", toEmail)
+	logrus.Printf("Resend count updated for %s", toEmail)
 
 	return nil
 }
 
-func (s *EmailService) sendEmail(ctx context.Context, toEmail string, verificationCode string) error {
+func (s *EmailService) sendEmail(toEmail string, verificationCode string) error {
 	smtpUser := os.Getenv("SMTP_USER")
 	smtpPass := os.Getenv("SMTP_PASS")
 	apiPort := os.Getenv("API_PORT")
@@ -121,11 +121,11 @@ func (s *EmailService) sendEmail(ctx context.Context, toEmail string, verificati
 
 	message := mail.NewMsg()
 	if err := message.From(smtpUser); err != nil {
-		log.Fatalf("failed to set From address: %s", err)
+		logrus.Errorf("failed to set From address: %s", err)
 		return err
 	}
 	if err := message.To(toEmail); err != nil {
-		log.Fatalf("failed to set To address: %s", err)
+		logrus.Errorf("failed to set To address: %s", err)
 		return err
 	}
 	message.Subject("Verify your email address for Desarrollo Seguro")
@@ -142,22 +142,22 @@ func (s *EmailService) sendEmail(ctx context.Context, toEmail string, verificati
 	client, err := mail.NewClient("smtp.gmail.com", mail.WithSMTPAuth(mail.SMTPAuthAutoDiscover),
 		mail.WithUsername(smtpUser), mail.WithPassword(smtpPass))
 	if err != nil {
-		log.Fatalf("failed to create mail client: %s", err)
+		logrus.Errorf("failed to create mail client: %s", err)
 		return err
 	}
 	if err := client.DialAndSend(message); err != nil {
-		log.Fatalf("failed to send mail: %s", err)
+		logrus.Errorf("failed to send mail: %s", err)
 		return err
 	}
 
-	log.Printf("Verification email sent to %s", toEmail)
+	logrus.Printf("Verification email sent to %s", toEmail)
 	return nil
 }
 
-func (s *EmailService) generateVerificationCode(ctx context.Context, ) string {
+func (s *EmailService) generateVerificationCode() string {
 	n, err := rand.Int(rand.Reader, big.NewInt(1000000)) // 0..999999
 	if err != nil {
-		log.Printf("failed to generate verification code: %v", err)
+		logrus.Errorf("failed to generate verification code: %v", err)
 		return "000000"
 	}
 	return fmt.Sprintf("%06d", n.Int64())

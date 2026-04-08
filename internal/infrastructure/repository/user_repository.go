@@ -112,7 +112,7 @@ func (r *UserRepository) Create(ctx context.Context, user *models.User) (*models
 	return user.ToUserResponse(), nil
 }
 
-func (r *UserRepository) GetAll(ctx context.Context, userType string) ([]models.UserResponse, error) {
+func (r *UserRepository) GetAll(ctx context.Context, userType string, search string) ([]models.UserResponse, error) {
 	logrus.Info("Retrieving all users from the database")
 	if r.db == nil {
 		logrus.Error("Database connection is nil")
@@ -126,6 +126,16 @@ func (r *UserRepository) GetAll(ctx context.Context, userType string) ([]models.
 	if userType != models.UserTypeAll {
 		query = query.Where(squirrel.Eq{"role": userType})
 	}
+
+    if search != "" {
+        pattern := "%" + search + "%"
+        query = query.Where(
+            squirrel.Or{
+                squirrel.Like{"username": pattern},
+                squirrel.Like{"email": pattern},
+            },
+        )
+    }
 
 	sql, args, err := query.ToSql()
 	if err != nil {
@@ -144,7 +154,7 @@ func (r *UserRepository) GetAll(ctx context.Context, userType string) ([]models.
 		}
 	}()
 
-	var users []models.UserResponse
+	users := make([]models.UserResponse, 0)
 	for rows.Next() {
 		var user models.UserResponse
 		if err := rows.Scan(&user.ID, &user.Username, &user.Email, &user.Role, &user.CreatedAt, &user.UpdatedAt); err != nil {

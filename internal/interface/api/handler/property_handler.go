@@ -127,6 +127,14 @@ func (h *PropertyHandler) CreateProperty(c *gin.Context) {
 	}
 	property.UserID = userID.(uint)
 
+	if property.OwnerID == 0 {
+    c.JSON(http.StatusBadRequest, gin.H{
+        "error":   "owner_id is required",
+        "message": "A property must be linked to an existing owner",
+    })
+    return
+}
+
 	newProperty, err := h.propertyUsecase.CreateProperty(c.Request.Context(), &property)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

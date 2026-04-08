@@ -17,6 +17,7 @@ migrate-create:
 	$(MIGRATE) create -ext sql -dir ./migrations -seq $(name)
 
 create-backend:
+	@docker network create ds-network || true
 	@docker compose up -d --build
 	@sleep 5
 	@$(MAKE) migrate-up
@@ -38,7 +39,7 @@ seed:
 	@echo ""
 	@echo "Database seeding complete!"
 
-seed-restart-database: 
+restart-database: 
 	@docker compose down -v
 	@docker compose up -d --build
 	@sleep 5

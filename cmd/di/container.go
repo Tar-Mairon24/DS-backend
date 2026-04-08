@@ -67,13 +67,14 @@ func NewContainer() *Container {
 	container.emailRepo = repository.NewEmailRepository(container.SqlDB)
 	container.imageRepo = repository.NewImageRepository(container.SqlDB)
 	container.appointmentRepo = repository.NewAppointmentRepository(container.SqlDB)
+	
 	// services
 	container.jwtService = service.NewJWTService(container.userRepo)
 	container.emailService = service.NewEmailService(container.emailRepo)
 
 	// usecases
 	container.userUsecase = usecase.NewUserUseCase(container.userRepo, container.hashing)
-	container.propertyUsecase = usecase.NewPropertyUseCase(container.propertyRepo, container.imageRepo)
+	container.propertyUsecase = usecase.NewPropertyUseCase(container.propertyRepo, container.userRepo, container.imageRepo)
 	container.authUsecase = usecase.NewAuthUseCase(container.userRepo, container.tokenRepo, container.jwtService, container.hashing, container.authMiddleware)
 	container.imageUsecase = usecase.NewImageUseCase(container.imageRepo)
 	container.appointmentUsecase = usecase.NewAppointmentUseCase(container.appointmentRepo, container.userRepo, container.propertyRepo)

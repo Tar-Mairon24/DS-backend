@@ -8,7 +8,7 @@ import (
 )
 
 type UserRepository interface {
-	GetAll(ctx context.Context, userType string) ([]models.UserResponse, error)
+	GetAll(ctx context.Context, userType string, search string) ([]models.UserResponse, error)
 	GetByID(ctx context.Context, id uint) (*models.UserResponse, error)
 	GetByEmail(ctx context.Context, email string) (*models.User, error)
 	ConsultPassword(ctx context.Context, email string) (string, error)
