@@ -364,8 +364,16 @@ func (r *AppointmentRepository) AddAgents(ctx context.Context, appointmentID uin
 }
 
 func (r *AppointmentRepository) UpdateAgents(ctx context.Context, appointmentID uint, agentIDs []uint) error {
-	if _, err := r.db.ExecContext(ctx, "DELETE FROM appointment_agents WHERE appointment_id = ?", appointmentID); err != nil {
-		logrus.WithError(err).Error("failed to delete existing agents")
+	sqlStr, args, err := r.qb.Delete("appointment_agents").
+		Where(sq.Eq{"appointment_id": appointmentID}).
+		ToSql()
+	if err != nil {
+		logrus.WithError(err).Error("failed to build delete agents query")
+		return err
+	}
+	_, err = r.db.ExecContext(ctx, sqlStr, args...)
+	if err != nil {
+		logrus.WithError(err).Error("failed to delete existing agents from appointment")
 		return err
 	}
 	return r.AddAgents(ctx, appointmentID, agentIDs)

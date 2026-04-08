@@ -33,14 +33,6 @@ func (h *PropertyHandler) GetProperties(c *gin.Context) {
 		return
 	}
 
-	if len(properties) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error":   "No properties found",
-			"message": "No properties available in the database",
-		})
-		return
-	}
-
 	logrus.Infof("Retrieved %d properties", len(properties))
 	c.JSON(http.StatusOK, properties)
 }
@@ -134,7 +126,6 @@ func (h *PropertyHandler) CreateProperty(c *gin.Context) {
 		return
 	}
 	property.UserID = userID.(uint)
-	property.OwnerID = userID.(uint) // Add this line
 
 	newProperty, err := h.propertyUsecase.CreateProperty(c.Request.Context(), &property)
 	if err != nil {

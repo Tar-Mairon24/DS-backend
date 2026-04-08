@@ -38,15 +38,6 @@ func (h *AppointmentHandler) GetAll(c *gin.Context) {
 		return
 	}
 
-	if len(appointments) == 0 {
-		logrus.Warn("No appointments found")
-		c.JSON(http.StatusNotFound, gin.H{
-			"error":   "No appointments found",
-			"message": "No appointments available in the database",
-		})
-		return
-	}
-
 	logrus.Infof("%d appointments retrieved successfully", len(appointments))
 	c.JSON(http.StatusOK, gin.H{
 		"data":    appointments,

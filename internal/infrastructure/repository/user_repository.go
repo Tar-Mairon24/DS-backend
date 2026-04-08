@@ -157,6 +157,12 @@ func (r *UserRepository) GetAll(ctx context.Context, userType string) ([]models.
 		logrus.WithError(err).Error("Error occurred while iterating over user rows")
 		return nil, err
 	}
+
+	if len(users) == 0 {
+		logrus.Warn("No users found in the database")
+		return []models.UserResponse{}, nil
+	}
+
 	logrus.Infof("Retrieved %d users from the database", len(users))
 	return users, nil
 }
