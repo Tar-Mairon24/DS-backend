@@ -125,15 +125,20 @@ func (h *PropertyHandler) CreateProperty(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
-	property.UserID = userID.(uint)
+	loggedUserID := userID.(uint)
+
+	// If no agents provided, use logged-in user
+	if len(property.UserID) == 0 {
+		property.UserID = []uint{loggedUserID}
+	}
 
 	if property.OwnerID == 0 {
-    c.JSON(http.StatusBadRequest, gin.H{
-        "error":   "owner_id is required",
-        "message": "A property must be linked to an existing owner",
-    })
-    return
-}
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "owner_id is required",
+			"message": "A property must be linked to an existing owner",
+		})
+		return
+	}
 
 	newProperty, err := h.propertyUsecase.CreateProperty(c.Request.Context(), &property)
 	if err != nil {
@@ -176,9 +181,14 @@ func (h *PropertyHandler) UpdateProperty(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
+	loggedUserID := userID.(uint)
 
 	property.ID = uint(id)
-	property.UserID = userID.(uint)
+	
+	// If no agents provided, use logged-in user
+	if len(property.UserID) == 0 {
+		property.UserID = []uint{loggedUserID}
+	}
 
 	updatedProperty, err := h.propertyUsecase.UpdateProperty(c.Request.Context(), &property)
 	if err != nil {

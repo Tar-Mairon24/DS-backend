@@ -33,15 +33,13 @@ type Property struct {
 	Notes           *string         `json:"notes"`
 	Description     *string         `json:"description"`
 	OwnerID         uint            `json:"owner_id"`
-	UserID          uint            `json:"user_id"`
+	UserID          []uint          `json:"user_id"`
 	PropertyType    PropertyType    `json:"property_type"`
 	TransactionType TransactionType `json:"transaction_type"`
 	Status          PropertyStatus  `json:"status"`
 	CreatedAt       time.Time       `json:"created_at"`
 	UpdatedAt       *time.Time      `json:"updated_at,omitempty"`
 	DeletedAt       *time.Time      `json:"-"`
-	Owner           *User           `json:"owner,omitempty"`
-	Users           []User          `json:"users,omitempty"`
 }
 
 // PropertyResponse represents the public view of a property
@@ -70,13 +68,14 @@ type PropertyResponse struct {
 	Notes           *string         `json:"notes"`
 	Description     *string         `json:"description"`
 	OwnerID         uint            `json:"-"` // Internal use only, not exposed to clients
-	UserID          uint            `json:"-"` // Internal use only, not exposed to clients
+	UserID          []uint          `json:"-"` // Internal use only, not exposed to clients
 	PropertyType    PropertyType    `json:"property_type"`
 	TransactionType TransactionType `json:"transaction_type"`
 	Status          PropertyStatus  `json:"status"`
 	CreatedAt       time.Time       `json:"created_at"`
 	UpdatedAt       *time.Time      `json:"updated_at,omitempty"`
-	Agent           *UserResponse   `json:"agent,omitempty"`
+	Agent           []UserInfo      `json:"agent"`
+	Owner           *UserInfo       `json:"owner,omitempty"`
 }
 
 // PropertyCard represents a simplified property view for listings
@@ -93,13 +92,15 @@ type PropertyCard struct {
 	TransactionType TransactionType `json:"transaction_type"`
 	Status          PropertyStatus  `json:"status"`
 	MainImagePath   *string         `json:"main_image_path"`
+	Agent           []UserInfo      `json:"agent"`
+	OwnerID         *UserInfo       `json:"owner,omitempty"`
 	CreatedAt       time.Time       `json:"created_at"`
 }
 
 type PropertyTile struct {
-	ID              uint            `json:"id"`
-	Title           string          `json:"title"`
-	Description     *string         `json:"description"`
+	ID          uint    `json:"id"`
+	Title       string  `json:"title"`
+	Description *string `json:"description"`
 }
 
 type TransactionType string

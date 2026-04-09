@@ -39,7 +39,6 @@ CREATE TABLE properties (
     utilities JSON,
     notes LONGTEXT,
     owner_id INT UNSIGNED NOT NULL,
-    user_id INT UNSIGNED NOT NULL,
     property_type VARCHAR(255) NOT NULL,
     transaction_type VARCHAR(255) NOT NULL,
     status VARCHAR(255) DEFAULT 'available',
@@ -47,9 +46,7 @@ CREATE TABLE properties (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP NULL,
     FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_deleted_at (deleted_at),
-    INDEX idx_user_id (user_id),
     INDEX idx_owner_id (owner_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

@@ -95,6 +95,7 @@ type AppointmentDetail struct {
 	OwnerID         *uint      `json:"owner_id,omitempty"`
 	OwnerName       *string    `json:"owner_name,omitempty"`
 	OwnerEmail      *string    `json:"owner_email,omitempty"`
+	OwnerPhone      *string    `json:"owner_phone,omitempty"`
 	Agents          []UserInfo `json:"agents"`
 }
 

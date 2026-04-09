@@ -32,8 +32,13 @@ func (uc *AppointmentUseCase) validateAgents(ctx context.Context, agentIDs []uin
 			logrus.Warnf("Failed to get user %d: %v", agentID, err)
 			return errors.New("agent not found")
 		}
-		logrus.Infof("Validating agent %d with role: '%s' (agent='%s', admin='%s')", agentID, user.Role, models.UserTypeAgent, models.UserTypeAdmin)
-		if user.Role != models.UserTypeAgent && user.Role != models.UserTypeAdmin {
+		logrus.Infof("Validating agent %d with role: '%s'", agentID, user.Role)
+
+		// Support both English ("agent") and Spanish ("agente") role names, plus admin
+		switch user.Role {
+		case models.UserTypeAgent, "agente", models.UserTypeAdmin:
+			// Valid agent or admin role
+		default:
 			logrus.Warnf("Agent validation failed for user %d with role '%s'", agentID, user.Role)
 			return errors.New("user must be an agent or admin to be assigned to an appointment")
 		}

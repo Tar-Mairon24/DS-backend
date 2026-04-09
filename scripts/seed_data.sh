@@ -8,7 +8,6 @@ BASE_URL=http://localhost:8080/api/v1
 COOKIE_JAR="$(dirname "$0")/.cookies.txt"
 
 # Generate dates relative to today
-TODAY=$(date -u +%Y-%m-%d)
 TOMORROW=$(date -u -d "+1 day" +%Y-%m-%d)
 TWO_DAYS=$(date -u -d "+2 days" +%Y-%m-%d)
 THREE_DAYS=$(date -u -d "+3 days" +%Y-%m-%d)
@@ -39,7 +38,7 @@ post_data "users" '{
     "email": "'"$USER2_EMAIL"'",
     "username": "'"$USER2_NAME"'",
     "password": "'"$USER2_PASSWORD"'",
-    "role": "agente",
+    "role": "agent",
     "phone": "8444428728"
 }'
 
@@ -113,9 +112,10 @@ post_data "properties" '{
   "amenities": ["piscina", "gimnasio", "área de juegos", "jardín"],
   "extras": ["aire acondicionado", "calefacción", "sistema de seguridad"],
   "utilities": ["agua", "luz", "gas", "internet", "cable"],
-  "notes": "Propiedad en excelente estado, recientemente remodelada. Ubicada en zona tranquila y segura.",
+  "notes": "Esta muy sucia, se contrata servicio de limpieza/n A la gente no le gusta la zona, es un lugar inseguro",
+  "description": "Propiedad en excelente estado, recientemente remodelada. Ubicada en zona tranquila y segura.",
   "owner_id": 6,
-  "user_id": 1,
+  "user_id": [1],
   "property_type": "Casa",
   "transaction_type": "Venta",
   "status": "Disponible"
@@ -143,9 +143,10 @@ post_data "properties" '{
   "amenities": ["estacionamiento", "servicios básicos incluidos"],
   "extras": ["aire acondicionado", "cocina integral", "lavadora"],
   "utilities": ["agua", "luz", "gas", "internet"],
-  "notes": "Departamento ideal para personas o parejas. Incluye servicios básicos en la renta. Disponible para renta inmediata.",
+  "notes": "El dueño no quiere perros",
+  "description": "Departamento ideal para personas o parejas. Incluye servicios básicos en la renta. Disponible para renta inmediata.",
   "owner_id": 6,
-  "user_id": 1,
+  "user_id": [1, 2],
   "property_type": "Apartamento",
   "transaction_type": "Renta",
   "status": "Disponible"
@@ -173,9 +174,10 @@ post_data "properties" '{
   "amenities": ["jardín amplio", "terraza", "sótano"],
   "extras": ["sistema de seguridad", "cerca perimetral", "puerta de herrería"],
   "utilities": ["agua", "luz", "gas"],
-  "notes": "Casa colonial con mucho potencial. Requiere mantenimiento. Ubicada en zona de alto valor histórico.",
+  "notes": "Suele ser rentada por residentes medicos",
+  "description": "Casa colonial con mucho potencial. Requiere mantenimiento. Ubicada en zona de alto valor histórico.",
   "owner_id": 7,
-  "user_id": 1,
+  "user_id": [1],
   "property_type": "Casa",
   "transaction_type": "Venta",
   "status": "Reservado"
@@ -203,9 +205,10 @@ post_data "properties" '{
   "amenities": ["gimnasio comunitario", "piscina comunitaria", "seguridad 24/7"],
   "extras": ["aire acondicionado central", "pisos de madera", "ventanales amplios"],
   "utilities": ["agua", "luz", "gas", "internet", "cable"],
-  "notes": "Loft de lujo en ubicación privilegiada. Ideal para profesionales. Condominio de alta seguridad.",
+  "notes": "Tiene deudas con CFE, el dueño no quiere pagar la deuda, se vende como está",
+  "description": "Loft de lujo en ubicación privilegiada. Ideal para profesionales. Condominio de alta seguridad.",
   "owner_id": 8,
-  "user_id": 1,
+  "user_id": [2],
   "property_type": "Loft",
   "transaction_type": "Venta",
   "status": "Disponible"
@@ -233,9 +236,10 @@ post_data "properties" '{
   "amenities": ["alberca en fraccionamiento", "área de juegos", "control de acceso"],
   "extras": ["aire acondicionado", "calefacción", "cocina equipada"],
   "utilities": ["agua", "luz", "gas", "internet"],
-  "notes": "Casa familiar ideal para vivir. Fraccionamiento seguro y con buena plusvalía. Disponible para renta con depósito.",
+  "notes": "No se aceptan mascotas, el dueño es muy estricto con el mantenimiento de la propiedad",
+  "description": "Casa familiar ideal para vivir. Fraccionamiento seguro y con buena plusvalía. Disponible para renta con depósito.",
   "owner_id": 7,
-  "user_id": 1,
+  "user_id": [1, 2],
   "property_type": "Casa",
   "transaction_type": "Renta",
   "status": "Disponible"
@@ -249,7 +253,8 @@ post_data "appointments" '{
     "status": "scheduled",
     "notes": "El cliente prefiere acabados modernos, destacar la remodelación de la cocina",
     "client_id": 3,
-    "property_id": 1
+    "property_id": 1,
+    "agent_ids": [1]
 }'
 
 post_data "appointments" '{
@@ -260,7 +265,8 @@ post_data "appointments" '{
     "status": "scheduled",
     "notes": null,
     "client_id": 4,
-    "property_id": 2
+    "property_id": 2,
+    "agent_ids": [1, 2]
 }'
 
 post_data "appointments" '{
@@ -271,7 +277,8 @@ post_data "appointments" '{
     "status": "scheduled",
     "notes": "Preguntar sobre rendimiento esperado y plusvalía de la zona",
     "client_id": 5,
-    "property_id": 4
+    "property_id": 4,
+    "agent_ids": [2]
 }'
 
 post_data "appointments" '{
@@ -282,5 +289,18 @@ post_data "appointments" '{
     "status": "scheduled",
     "notes": "El cliente solicita revisar cláusulas de penalización por cancelación",
     "client_id": 3,
-    "property_id": 5
+    "property_id": 5,
+    "agent_ids": [2]
+}'
+
+post_data "appointments" '{
+    "title": "Visita de inspección - Casa San Patricio",
+    "description": "Inspección detallada de la propiedad con cliente interesado en comprar",
+    "start_date": "'"$TOMORROW"'T11:00:00Z",
+    "end_date": "'"$TOMORROW"'T12:30:00Z",
+    "status": "scheduled",
+    "notes": "El cliente quiere enfocarse en el estado de los acabados y la estructura",
+    "client_id": 4,
+    "property_id": 1,
+    "agent_ids": [1, 2]
 }'

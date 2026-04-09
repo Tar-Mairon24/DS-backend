@@ -44,13 +44,16 @@ const getAppointmentByIDSQL = `
 		p.owner_id,
 		u_owner.username     AS owner_name,
 		u_owner.email        AS owner_email,
+		u_owner.phone        AS owner_phone,
 		COALESCE(
 			JSON_ARRAYAGG(
-				JSON_OBJECT(
-					'id',       u_agents.id,
-					'username', u_agents.username,
-					'email',    u_agents.email
-				)
+				CASE WHEN u_agents.id IS NOT NULL THEN
+					JSON_OBJECT(
+						'id',       u_agents.id,
+						'username', u_agents.username,
+						'email',    u_agents.email
+					)
+				END
 			),
 			JSON_ARRAY()
 		) AS agents
@@ -66,7 +69,7 @@ const getAppointmentByIDSQL = `
 		a.id, a.title, a.description, a.start_date, a.end_date, a.status, a.notes,
 		a.id_property, p.title, p.address,
 		a.id_client, u_client.username, u_client.email, u_client.phone,
-		p.owner_id, u_owner.username, u_owner.email
+		p.owner_id, u_owner.username, u_owner.email, u_owner.phone
 	`
 
 func (r *AppointmentRepository) GetByID(ctx context.Context, id uint) (*models.AppointmentDetail, error) {
@@ -93,6 +96,7 @@ func (r *AppointmentRepository) GetByID(ctx context.Context, id uint) (*models.A
 		&d.OwnerID,
 		&d.OwnerName,
 		&d.OwnerEmail,
+		&d.OwnerPhone,
 		&agentsJSON,
 	)
 	if err != nil {
@@ -257,6 +261,14 @@ func (r *AppointmentRepository) ClientHasOverlap(ctx context.Context, clientID u
 }
 
 func (r *AppointmentRepository) Create(ctx context.Context, appointment *models.Appointment) (*models.Appointment, error) {
+	// Start transaction for atomic operations
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		logrus.WithError(err).Error("Failed to begin transaction for creating appointment")
+		return nil, err
+	}
+	defer tx.Rollback()
+
 	sqlStr, args, err := r.qb.Insert("appointments").
 		Columns("title", "description", "start_date", "end_date", "status", "notes", "id_client", "id_property").
 		Values(appointment.Title, appointment.Description, formatTimeForMySQL(appointment.StartDate), formatTimeForMySQL(appointment.EndDate), appointment.Status, appointment.Notes, appointment.ClientID, appointment.PropertyID).
@@ -264,7 +276,7 @@ func (r *AppointmentRepository) Create(ctx context.Context, appointment *models.
 	if err != nil {
 		return nil, err
 	}
-	res, err := r.db.ExecContext(ctx, sqlStr, args...)
+	res, err := tx.ExecContext(ctx, sqlStr, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -272,15 +284,45 @@ func (r *AppointmentRepository) Create(ctx context.Context, appointment *models.
 	appointment.ID = uint(id)
 	appointment.CreatedAt = time.Now()
 
-	if err := r.AddAgents(ctx, appointment.ID, appointment.AgentIDs); err != nil {
-		logrus.WithError(err).Error("failed to add agents to appointment")
+	// Insert agents into appointment_agents junction table
+	if len(appointment.AgentIDs) > 0 {
+		builder := r.qb.Insert("appointment_agents").Columns("appointment_id", "user_id")
+		for _, agentID := range appointment.AgentIDs {
+			builder = builder.Values(appointment.ID, agentID)
+		}
+
+		agentSqlStr, agentArgs, err := builder.ToSql()
+		if err != nil {
+			logrus.WithError(err).Error("Failed to build SQL query for inserting agents to appointment")
+			return nil, err
+		}
+
+		_, err = tx.ExecContext(ctx, agentSqlStr, agentArgs...)
+		if err != nil {
+			logrus.WithError(err).Error("Failed to insert agents into appointment_agents")
+			return nil, err
+		}
+	}
+
+	// Commit transaction
+	if err := tx.Commit(); err != nil {
+		logrus.WithError(err).Error("Failed to commit transaction for creating appointment")
 		return nil, err
 	}
 
+	logrus.Infof("Appointment created successfully with ID: %d with %d agents", appointment.ID, len(appointment.AgentIDs))
 	return appointment, nil
 }
 
 func (r *AppointmentRepository) Update(ctx context.Context, appointment *models.Appointment) (*models.Appointment, error) {
+	// Start transaction for atomic operations
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		logrus.WithError(err).Error("Failed to begin transaction for updating appointment")
+		return nil, err
+	}
+	defer tx.Rollback()
+
 	sqlStr, args, err := r.qb.Update("appointments").
 		Set("title", appointment.Title).
 		Set("description", appointment.Description).
@@ -294,16 +336,54 @@ func (r *AppointmentRepository) Update(ctx context.Context, appointment *models.
 	if err != nil {
 		return nil, err
 	}
-	_, err = r.db.ExecContext(ctx, sqlStr, args...)
+	_, err = tx.ExecContext(ctx, sqlStr, args...)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := r.UpdateAgents(ctx, appointment.ID, appointment.AgentIDs); err != nil {
-		logrus.WithError(err).Error("failed to update agents for appointment")
+	// Delete existing agent relationships
+	deleteQuery := r.qb.Delete("appointment_agents").
+		Where(sq.Eq{"appointment_id": appointment.ID})
+
+	deleteSqlStr, deleteArgs, err := deleteQuery.ToSql()
+	if err != nil {
+		logrus.WithError(err).Error("Failed to build SQL query for deleting old agents")
 		return nil, err
 	}
 
+	_, err = tx.ExecContext(ctx, deleteSqlStr, deleteArgs...)
+	if err != nil {
+		logrus.WithError(err).Error("Failed to delete old agent relationships")
+		return nil, err
+	}
+
+	// Insert new agent relationships
+	if len(appointment.AgentIDs) > 0 {
+		builder := r.qb.Insert("appointment_agents").Columns("appointment_id", "user_id")
+		for _, agentID := range appointment.AgentIDs {
+			builder = builder.Values(appointment.ID, agentID)
+		}
+
+		agentSqlStr, agentArgs, err := builder.ToSql()
+		if err != nil {
+			logrus.WithError(err).Error("Failed to build SQL query for inserting agents to appointment")
+			return nil, err
+		}
+
+		_, err = tx.ExecContext(ctx, agentSqlStr, agentArgs...)
+		if err != nil {
+			logrus.WithError(err).Error("Failed to insert agents into appointment_agents")
+			return nil, err
+		}
+	}
+
+	// Commit transaction
+	if err := tx.Commit(); err != nil {
+		logrus.WithError(err).Error("Failed to commit transaction for updating appointment")
+		return nil, err
+	}
+
+	logrus.Infof("Appointment with ID %d updated successfully with %d agents", appointment.ID, len(appointment.AgentIDs))
 	return appointment, nil
 }
 

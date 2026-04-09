@@ -19,7 +19,7 @@ type PropertyUseCase struct {
 func NewPropertyUseCase(propertyRepo ports.PropertyRepository, userRepo ports.UserRepository, imageRepo ports.ImageRepository) ports.PropertyUseCase {
 	return &PropertyUseCase{
 		propertyRepo: propertyRepo,
-		userRepo:    userRepo,
+		userRepo:     userRepo,
 		imageRepo:    imageRepo,
 	}
 }
@@ -67,14 +67,35 @@ func (p *PropertyUseCase) CreateProperty(ctx context.Context, property *models.P
 		logrus.Error("Price must be greater than zero")
 		return nil, errors.New("price must be greater than zero")
 	}
+	if len(property.UserID) == 0 {
+		logrus.Error("At least one agent must be assigned")
+		return nil, errors.New("at least one agent must be assigned")
+	}
 
+	// Validate owner
 	owner, err := p.userRepo.GetByID(ctx, property.OwnerID)
-    if err != nil {
-        return nil, errors.New("owner not found")
-    }
-    if owner.Role != models.UserTypeOwner {
-        return nil, errors.New("user is not an owner")
-    }
+	if err != nil {
+		return nil, errors.New("owner not found")
+	}
+	if owner.Role != models.UserTypeOwner {
+		return nil, errors.New("user is not an owner")
+	}
+
+	for _, agentID := range property.UserID {
+		agent, err := p.userRepo.GetByID(ctx, agentID)
+		if err != nil {
+			logrus.WithError(err).Warnf("Agent with ID %d not found", agentID)
+			return nil, errors.New("agent not found")
+		}
+		// Accept agent, agente (Spanish), or admin roles
+		switch agent.Role {
+		case models.UserTypeAgent, "agente", models.UserTypeAdmin:
+			// Valid roles
+		default:
+			logrus.Warnf("User with ID %d has invalid role: %s", agentID, agent.Role)
+			return nil, errors.New("user is not an agent or admin")
+		}
+	}
 
 	createdProperty, err := p.propertyRepo.Create(ctx, property)
 	if err != nil {
@@ -222,6 +243,22 @@ func (p *PropertyUseCase) UpdateProperty(ctx context.Context, property *models.P
 		return nil, errors.New("price must be greater than zero")
 	}
 
+	if len(property.UserID) > 0 {
+		for _, agentID := range property.UserID {
+			agent, err := p.userRepo.GetByID(ctx, agentID)
+			if err != nil {
+				logrus.WithError(err).Warnf("Agent with ID %d not found", agentID)
+				return nil, errors.New("agent not found")
+			}
+			switch agent.Role {
+				case models.UserTypeAgent, models.UserTypeAdmin:
+					continue
+				default:
+					logrus.Warnf("User with ID %d has invalid role: %s", agentID, agent.Role)
+					return nil, errors.New("user is not an agent or admin")
+				}
+		}
+	}
 	updatedProperty, err := p.propertyRepo.Update(ctx, existing)
 	if err != nil {
 		return nil, err
