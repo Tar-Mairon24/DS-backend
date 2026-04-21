@@ -1,0 +1,2 @@
+ALTER TABLE users
+ADD COLUMN mfa_config BOOLEAN NOT NULL DEFAULT FALSE AFTER mfa_activated;

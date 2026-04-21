@@ -1,0 +1,14 @@
+CREATE TABLE images (
+id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+property_id INT UNSIGNED NOT NULL,
+path VARCHAR(255) NOT NULL,
+description VARCHAR(255),
+main_image BOOLEAN DEFAULT FALSE,
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+deleted_at TIMESTAMP NULL,
+INDEX idx_property_id (property_id),
+INDEX idx_deleted_at (deleted_at),
+CONSTRAINT fk_images_property
+FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
