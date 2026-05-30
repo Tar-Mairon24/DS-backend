@@ -22,6 +22,6 @@ jobs:
         run: go test -v -coverprofile=coverage.out -covermode=atomic -coverpkg=./internal/...,./middleware/... ./test/unit/...
   
   e2e-tests:
-    needs: test-and-lint
+    needs: unit-test
     uses: mauroav21/AutPruebLogin/.github/workflows/e2e-login-tests.yml@main
     secrets: inherit
