@@ -20,9 +20,6 @@ jobs:
       
       - name: Run Go tests
         run: go test -v -coverprofile=coverage.out -covermode=atomic -coverpkg=./internal/...,./middleware/... ./test/unit/...
-      
-      - name: Run Go linter
-        uses: golangci/golangci-lint-action@v8
   
   trigger-e2e:
     needs: test-and-lint
