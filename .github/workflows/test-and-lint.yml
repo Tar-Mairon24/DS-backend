@@ -24,3 +24,20 @@ jobs:
   e2e-tests:
     needs: unit-test
     uses: mauroav21/AutPruebLogin/.github/workflows/e2e-login-tests.yml@main
+    secrets:
+      BACKEND_DB_USER: ${{ secrets.BACKEND_DB_USER }}
+      BACKEND_DB_PASSWORD: ${{ secrets.BACKEND_DB_PASSWORD }}
+      BACKEND_DB_NAME: ${{ secrets.BACKEND_DB_NAME }}
+      BACKEND_JWT_SECRET: ${{ secrets.BACKEND_JWT_SECRET }}
+      BACKEND_SMTP_USER: ${{ secrets.BACKEND_SMTP_USER }}
+      BACKEND_SMTP_PASS: ${{ secrets.BACKEND_SMTP_PASS }}
+      BACKEND_USER1_EMAIL: ${{ secrets.BACKEND_USER1_EMAIL }}
+      BACKEND_USER1_PASSWORD: ${{ secrets.BACKEND_USER1_PASSWORD }}
+      BACKEND_USER2_EMAIL: ${{ secrets.BACKEND_USER2_EMAIL }}
+      BACKEND_USER2_PASSWORD: ${{ secrets.BACKEND_USER2_PASSWORD }}
+      TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+      TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+      TEST_USER2_EMAIL: ${{ secrets.TEST_USER2_EMAIL }}
+      TEST_USER2_PASSWORD: ${{ secrets.TEST_USER2_PASSWORD }}
+      TEST_USER3_EMAIL: ${{ secrets.TEST_USER3_EMAIL }}
+      TEST_USER3_PASSWORD: ${{ secrets.TEST_USER3_PASSWORD }}
