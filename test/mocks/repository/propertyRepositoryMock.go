@@ -33,6 +33,13 @@ func (m *MockPropertyRepository) GetByID(ctx context.Context, id uint) (*models.
 	}
 	return nil, args.Error(1)
 }
+func (m *MockPropertyRepository) GetPropertyCardByID(ctx context.Context, id uint) (*models.PropertyCard, error) {
+	args := m.Called(ctx, id)
+	if property, ok := args.Get(0).(*models.PropertyCard); ok {
+		return property, args.Error(1)
+	}
+	return nil, args.Error(1)
+}
 func (m *MockPropertyRepository) Create(ctx context.Context, property *models.Property) (*models.PropertyResponse, error) {
 	args := m.Called(ctx, property)
 	if propertyResponse, ok := args.Get(0).(*models.PropertyResponse); ok {

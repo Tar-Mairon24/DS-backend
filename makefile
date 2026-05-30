@@ -17,7 +17,7 @@ migrate-create:
 	$(MIGRATE) create -ext sql -dir ./migrations -seq $(name)
 
 create-backend:
-	@docker network create ds-network || true
+	@docker network create ds_network || true
 	@docker compose up -d --build
 	@sleep 5
 	@$(MAKE) migrate-up

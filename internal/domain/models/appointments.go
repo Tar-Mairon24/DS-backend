@@ -1,7 +1,9 @@
 package models
 
 import (
+	"database/sql/driver"
 	"encoding/json"
+	"errors"
 	"time"
 )
 
@@ -126,3 +128,48 @@ const (
 	AppointmentStatusArchived  StatusType = "archived"
 	AppointmentStatusNoShow    StatusType = "no-show"
 )
+
+// Scan implements the Scanner interface for database reading
+func (a *Appointment) Scan(value any) error {
+	if value == nil {
+		return nil
+	}
+
+	switch v := value.(type) {
+	case []byte:
+		return json.Unmarshal(v, a)
+	case string:
+		return json.Unmarshal([]byte(v), a)
+	default:
+		return errors.New("cannot scan Appointment")
+	}
+}
+
+// Value implements the Valuer interface for database writing
+func (a *Appointment) Value() (driver.Value, error) {
+	if a == nil {
+		return nil, errors.New("cannot convert nil Appointment to database value")
+	}
+	return json.Marshal(a)
+}
+
+// ToResponse converts an Appointment to AppointmentDetail response
+func (a *Appointment) ToResponse() *AppointmentDetail {
+	if a == nil {
+		return nil
+	}
+
+	return &AppointmentDetail{
+		ID:          a.ID,
+		Title:       a.Title,
+		Description: a.Description,
+		StartDate:   a.StartDate,
+		EndDate:     a.EndDate,
+		Status:      a.Status,
+		Notes:       a.Notes,
+		PropertyID:  a.PropertyID,
+		ClientID:    a.ClientID,
+		OwnerID:     &a.OwnerID,
+		Agents:      []UserInfo{},
+	}
+}

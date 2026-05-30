@@ -48,3 +48,11 @@ func (m *MockPropertyUseCase) DeleteProperty(ctx context.Context, id uint) error
 	args := m.Called(ctx, id)
 	return args.Error(0)
 }
+
+func (m *MockPropertyUseCase) GetPropertyCardByID(ctx context.Context, id uint) (*models.PropertyCard, error) {
+	args := m.Called(ctx, id)
+	if card, ok := args.Get(0).(*models.PropertyCard); ok {
+		return card, args.Error(1)
+	}
+	return nil, args.Error(1)
+}
