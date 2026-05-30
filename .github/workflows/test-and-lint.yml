@@ -22,7 +22,7 @@ jobs:
         run: go test -v -coverprofile=coverage.out -covermode=atomic -coverpkg=./internal/...,./middleware/... ./test/unit/...
   
   trigger-e2e:
-    needs: test-and-lint
+    needs: unit-test
     runs-on: ubuntu-latest
     steps:
       - name: Trigger E2E Tests
