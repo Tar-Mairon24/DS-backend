@@ -19,10 +19,10 @@ jobs:
           go-version: '1.23'  # Adjust to your Go version
       
       - name: Run Go tests
-        run: go test -v -coverprofile=coverage.out -covermode=atomic -coverpkg=./internal/...,./cmd/...,./middleware/... ./test/unit/...
+        run: go test -v -coverprofile=coverage.out -covermode=atomic -coverpkg=./internal/...,./middleware/... ./test/unit/...
       
       - name: Run Go linter
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v2
         with:
           version: latest
   
