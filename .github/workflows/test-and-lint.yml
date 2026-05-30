@@ -16,13 +16,13 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.23'
+          go-version: '1.24'
       
       - name: Run Go tests
         run: go test -v -coverprofile=coverage.out -covermode=atomic -coverpkg=./internal/...,./middleware/... ./test/unit/...
       
       - name: Run Go linter
-        uses: golangci/golangci-lint-action@v4
+        uses: golangci/golangci-lint-action@v8
   
   trigger-e2e:
     needs: test-and-lint
