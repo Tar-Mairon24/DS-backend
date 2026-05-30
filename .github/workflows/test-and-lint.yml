@@ -1,0 +1,43 @@
+name: Backend Tests and Linting
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test-and-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.23'  # Adjust to your Go version
+      
+      - name: Run Go tests
+        run: go test -v -coverprofile=coverage.out -covermode=atomic -coverpkg=./internal/...,./cmd/...,./middleware/... ./test/unit/...
+      
+      - name: Run Go linter
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+  
+  trigger-e2e:
+    needs: test-and-lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger E2E Tests
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: 'mauroav21',
+              repo: 'AutPruebLogin',
+              workflow_id: 'e2e-login-tests.yml',
+              ref: 'main'
+            });
