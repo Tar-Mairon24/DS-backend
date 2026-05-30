@@ -1,0 +1,1 @@
+ALTER TABLE appointments MODIFY COLUMN status enum ('scheduled', 'completed', 'cancelled', 'archived', 'no-show') DEFAULT 'scheduled'

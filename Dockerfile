@@ -13,7 +13,7 @@ COPY . .
 RUN go build -o main cmd/main.go 
 
 
-FROM alpine:latest
+FROM alpine:3.23.3
 
 RUN apk --no-cache add ca-certificates tzdata
 
@@ -24,6 +24,8 @@ RUN adduser -D -s /bin/sh appuser
 COPY --from=builder /app/main .
 
 RUN chown appuser:appuser main
+
+RUN mkdir -p /app/uploads && chown appuser:appuser /app/uploads
 
 USER appuser
 

@@ -1,0 +1,16 @@
+Dockerfile
+
+compose.yml
+
+.golangci.yml
+
+.git
+.env
+
+.gitignore
+
+Readme.md
+
+test/
+
+scripts/
