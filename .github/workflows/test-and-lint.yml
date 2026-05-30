@@ -24,4 +24,3 @@ jobs:
   e2e-tests:
     needs: unit-test
     uses: mauroav21/AutPruebLogin/.github/workflows/e2e-login-tests.yml@main
-    secrets: inherit
