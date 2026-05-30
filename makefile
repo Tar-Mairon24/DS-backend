@@ -1,7 +1,7 @@
 include .env
 export
 
-MIGRATE=migrate
+MIGRATE=~/go/bin/migrate
 DB_URL=mysql://$(DB_USER):$(DB_PASSWORD)@($(DB_HOST):$(DB_PORT))/$(DB_NAME)?parseTime=true&loc=Local
 
 migrate-up:
@@ -17,7 +17,7 @@ migrate-create:
 	$(MIGRATE) create -ext sql -dir ./migrations -seq $(name)
 
 create-backend:
-	@docker network create ds-network || true
+	@docker network create ds_network || true
 	@docker compose up -d --build
 	@sleep 5
 	@$(MAKE) migrate-up

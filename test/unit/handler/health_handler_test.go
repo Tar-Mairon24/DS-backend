@@ -1,12 +1,12 @@
 package handler_test
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
-	"encoding/json"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -30,7 +30,7 @@ func TestRegisterHealthRoutes_GET(t *testing.T) {
 	body := w.Body.String()
 	assert.Contains(t, body, `"status":"OK"`)
 	assert.Contains(t, body, `"message":"Service is healthy"`)
-	assert.Contains(t, body, `"service":"ds-backend"`)
+	assert.Contains(t, body, `"service":"inmo-backend"`)
 	assert.Contains(t, body, `"version":"1.0.0"`)
 	// Check timestamp is RFC3339 and close to now
 	type respStruct struct {
@@ -72,7 +72,7 @@ func TestRegisterDetailedHealthRoute_GET(t *testing.T) {
 	body := w.Body.String()
 	assert.Contains(t, body, `"status":"OK"`)
 	assert.Contains(t, body, `"message":"All services are operational"`)
-	assert.Contains(t, body, `"service":"ds-backend"`)
+	assert.Contains(t, body, `"service":"inmo-backend"`)
 	assert.Contains(t, body, `"version":"1.0.0"`)
 	assert.Contains(t, body, `"database":"connected"`)
 	assert.Contains(t, body, `"memory":"ok"`)
@@ -137,4 +137,3 @@ func TestRegisterPingRoute_HEAD(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.True(t, w.Body.Len() == 0 || strings.TrimSpace(w.Body.String()) == "")
 }
-

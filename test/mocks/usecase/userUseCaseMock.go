@@ -16,8 +16,8 @@ func NewMockUserUseCase() *MockUserUseCase {
 	return &MockUserUseCase{}
 }
 
-func (m *MockUserUseCase) GetAllUsers(ctx context.Context) ([]models.UserResponse, error) {
-	args := m.Called(ctx)
+func (m *MockUserUseCase) GetAllUsers(ctx context.Context, userType string, search string) ([]models.UserResponse, error) {
+	args := m.Called(ctx, userType, search)
 
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -31,8 +31,8 @@ func (m *MockUserUseCase) GetUserByID(ctx context.Context, id uint) (*models.Use
 	}
 	return nil, args.Error(1)
 }
-func (m *MockUserUseCase) CreateUser(ctx context.Context, user *models.User) (*models.UserResponse, error) {
-	args := m.Called(ctx, user)
+func (m *MockUserUseCase) CreateUser(ctx context.Context, user *models.User, createBy string) (*models.UserResponse, error) {
+	args := m.Called(ctx, user, createBy)
 	if userResp, ok := args.Get(0).(*models.UserResponse); ok {
 		return userResp, args.Error(1)
 	}

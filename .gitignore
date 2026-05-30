@@ -66,5 +66,6 @@ go.work.sum
 scripts/.cookies.txt
 
 # Editor/IDE
-# .idea/
-# .vscode/
+.idea/
+.vscode/
+.kiro

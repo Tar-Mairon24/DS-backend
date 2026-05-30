@@ -41,8 +41,8 @@ func (m *MockUserRepository) GetByEmail(ctx context.Context, email string) (*mod
 	}
 	return nil, args.Error(1)
 }
-func (m *MockUserRepository) GetAll(ctx context.Context) ([]models.UserResponse, error) {
-	args := m.Called(ctx)
+func (m *MockUserRepository) GetAll(ctx context.Context, userType string, search string) ([]models.UserResponse, error) {
+	args := m.Called(ctx, userType, search)
 	if users, ok := args.Get(0).([]models.UserResponse); ok {
 		return users, args.Error(1)
 	}
